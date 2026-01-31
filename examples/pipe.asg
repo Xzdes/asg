@@ -1,0 +1,61 @@
+; ASG Pipe and Compose Test
+
+(print "=== Pipe Operator |> ===")
+
+; Simple pipe
+(print "5 |> double |> square:")
+(fn double (x) (* x 2))
+(fn square (x) (* x x))
+(print (|> 5 double square))  ; (5*2)^2 = 100
+
+; Pipe with lambdas
+(print "3 |> (+1) |> (*2):")
+(print (|> 3 (lambda (x) (+ x 1)) (lambda (x) (* x 2))))  ; (3+1)*2 = 8
+
+; Chain multiple operations
+(print "10 |> (-3) |> (*2) |> (+5):")
+(print (|> 10
+  (lambda (x) (- x 3))
+  (lambda (x) (* x 2))
+  (lambda (x) (+ x 5))))  ; ((10-3)*2)+5 = 19
+
+; With array operations
+(print "Array pipe: [1,2,3,4,5] |> filter(even) |> map(*2) |> sum:")
+(print (|> (array 1 2 3 4 5)
+  (lambda (arr) (filter arr (lambda (x) (== (% x 2) 0))))
+  (lambda (arr) (map arr (lambda (x) (* x 2))))
+  (lambda (arr) (sum arr))))  ; filter: [2,4], map: [4,8], sum: 12
+
+; String pipe - use builtin ops inside lambdas
+(print "String pipe: 'hello' |> upper |> concat('!'):")
+(print (|> "hello"
+  (lambda (s) (str-upper s))
+  (lambda (s) (concat s "!"))))
+
+; Pipe with single function
+(print "Single function pipe:")
+(print (|> 42 (lambda (x) (+ x 8))))
+
+; === Compose ===
+(print "")
+(print "=== Function Composition ===")
+
+; Compose two functions
+(print "compose(double, square)(5):")
+(let double-then-square (compose double square))
+(print (double-then-square 5))  ; (5*2)^2 = 100
+
+; Compose with lambdas
+(print "compose(+1, *2)(10):")
+(let add-then-double (compose (lambda (x) (+ x 1)) (lambda (x) (* x 2))))
+(print (add-then-double 10))  ; (10+1)*2 = 22
+
+; Multiple composition
+(print "compose(+1, *2, -3)(5):")
+(let complex-fn (compose
+  (lambda (x) (+ x 1))
+  (lambda (x) (* x 2))
+  (lambda (x) (- x 3))))
+(print (complex-fn 5))  ; ((5+1)*2)-3 = 9
+
+(print "=== PIPE TESTS PASSED ===")

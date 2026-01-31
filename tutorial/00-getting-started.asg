@@ -1,0 +1,216 @@
+; =====================================================
+; ASG Tutorial: Getting Started
+; =====================================================
+;
+; Welcome to ASG! This file introduces the basics
+; of the ASG programming language.
+;
+; Run this file:
+;   cargo run --bin asg -- tutorial/00-getting-started.asg
+;
+; =====================================================
+
+(print "=== Welcome to ASG! ===")
+(print "")
+
+; ===============================================
+; 1. Comments
+; ===============================================
+
+; This is a single-line comment
+; Comments start with a semicolon
+
+(print "1. COMMENTS")
+(print "   Comments start with ; and continue to end of line")
+(print "")
+
+; ===============================================
+; 2. Literals
+; ===============================================
+
+(print "2. LITERALS")
+
+; Integers
+42
+
+; Floats
+3.14159
+
+; Booleans
+true
+false
+
+; Strings
+"Hello, World!"
+
+(print "   Integer: 42")
+(print "   Float: 3.14159")
+(print "   Boolean: true / false")
+(print "   String: Hello, World!")
+(print "")
+
+; ===============================================
+; 3. Variables
+; ===============================================
+
+(print "3. VARIABLES")
+
+; Define a variable with 'let'
+(let name "ASG")
+(let version 1)
+(let is-awesome true)
+
+(print "   name = ASG")
+(print "   version = 1")
+(print "   is-awesome = true")
+
+; Variables can be reassigned with 'set'
+(set version 2)
+(print "   version (updated) = 2")
+(print "")
+
+; ===============================================
+; 4. Arithmetic
+; ===============================================
+
+(print "4. ARITHMETIC")
+
+(let a (+ 5 3))
+(print "   5 + 3 = 8")
+
+(let b (- 10 4))
+(print "   10 - 4 = 6")
+
+(let c (* 6 7))
+(print "   6 * 7 = 42")
+
+(let d (/ 20 4))
+(print "   20 / 4 = 5")
+
+(let e (% 17 5))
+(print "   17 % 5 = 2")
+
+(print "")
+
+; ===============================================
+; 5. Comparison and Logic
+; ===============================================
+
+(print "5. COMPARISON & LOGIC")
+
+; Comparison
+(let gt (> 5 3))
+(print "   5 > 3 = true")
+
+(let lt (< 5 3))
+(print "   5 < 3 = false")
+
+(let eq (== 5 5))
+(print "   5 == 5 = true")
+
+(let ne (!= 5 3))
+(print "   5 != 3 = true")
+
+; Logic
+(let and-result (and true false))
+(print "   (and true false) = false")
+
+(let or-result (or true false))
+(print "   (or true false) = true")
+
+(let not-result (not false))
+(print "   (not false) = true")
+
+(print "")
+
+; ===============================================
+; 6. Conditionals
+; ===============================================
+
+(print "6. CONDITIONALS")
+
+; if expression
+(let x 10)
+(let result (if (> x 5) "big" "small"))
+(print "   x = 10")
+(print "   if (> x 5) then big else small = big")
+
+(print "")
+
+; ===============================================
+; 7. Functions
+; ===============================================
+
+(print "7. FUNCTIONS")
+
+; Define a function
+(fn square (n)
+  (* n n))
+
+(let sq (square 5))
+(print "   (square 5) = 25")
+
+; Recursive function
+(fn factorial (n)
+  (if (<= n 1)
+      1
+      (* n (factorial (- n 1)))))
+
+(let fact (factorial 5))
+(print "   (factorial 5) = 120")
+
+; Lambda (anonymous function)
+(let double (lambda (n) (* n 2)))
+(let d (double 7))
+(print "   (double 7) = 14")
+
+(print "")
+
+; ===============================================
+; 8. Arrays
+; ===============================================
+
+(print "8. ARRAYS")
+
+; Create array
+(let nums (array 1 2 3 4 5))
+(print "   nums = [1, 2, 3, 4, 5]")
+
+; Access element
+(let first (index nums 0))
+(print "   (index nums 0) = 1")
+
+; Length
+(let len (length nums))
+(print "   (length nums) = 5")
+
+(print "")
+
+; ===============================================
+; 9. Loops
+; ===============================================
+
+(print "9. LOOPS")
+
+(let sum 0)
+(let i 1)
+(while (<= i 5)
+  (do
+    (set sum (+ sum i))
+    (set i (+ i 1))))
+
+(print "   sum of 1 to 5 = 15")
+
+(print "")
+
+; ===============================================
+; Summary
+; ===============================================
+
+(print "=== Tutorial Complete! ===")
+(print "")
+(print "Next steps:")
+(print "  1. Try the REPL: cargo run --bin asg")
+(print "  2. Explore examples in the examples/ directory")
+(print "")
+(print "Happy coding with ASG!")

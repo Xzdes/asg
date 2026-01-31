@@ -1,0 +1,34 @@
+; ============================================
+; NUMBER GUESSING GAME
+; A simple interactive game using input
+;
+; Run: cargo run -- examples/guess_game.asg
+; ============================================
+
+(print "=== Number Guessing Game ===")
+(print "I'm thinking of a number between 1 and 100!")
+(print "")
+
+; Generate a "random" number using a simple formula
+; (In a real implementation, we'd add a random function)
+(let secret 42)
+(let attempts 0)
+(let won false)
+
+(while (not won)
+  (do
+    (let guess (input-int "Your guess: "))
+    (set attempts (+ attempts 1))
+
+    (if (== guess secret)
+      (do
+        (set won true)
+        (print "")
+        (print "*** Congratulations! ***")
+        (print (concat "You guessed it in " (concat (str attempts) " attempts!"))))
+      (if (< guess secret)
+        (print "Too low! Try higher.")
+        (print "Too high! Try lower.")))))
+
+(print "")
+(print "Thanks for playing!")

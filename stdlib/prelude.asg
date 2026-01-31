@@ -1,0 +1,107 @@
+; ASG Prelude
+; Автоматически импортируется во все модули.
+
+; === Базовые константы ===
+(let true 1)
+(let false 0)
+(let nil ())
+
+; === Базовые функции ===
+
+; Идентичность
+(fn id (x) x)
+
+; Константная функция
+(fn const (x y) x)
+
+; Композиция двух функций
+(fn compose (f g)
+  (lambda (x) (f (g x))))
+
+; Применить функцию к значению
+(fn apply (f x) (f x))
+
+; Flip — меняет порядок аргументов
+(fn flip (f)
+  (lambda (x y) (f y x)))
+
+; === Логические операции ===
+
+; Логическое И (для значений)
+(fn and-fn (a b)
+  (if a b false))
+
+; Логическое ИЛИ (для значений)
+(fn or-fn (a b)
+  (if a true b))
+
+; Логическое НЕ
+(fn not-fn (x)
+  (if x false true))
+
+; === Условные выражения ===
+
+; Если первый аргумент nil — вернуть второй
+(fn or-else (x default)
+  (if (= x nil) default x))
+
+; When — выполнить если условие истинно
+(fn when (cond body)
+  (if cond body nil))
+
+; Unless — выполнить если условие ложно
+(fn unless (cond body)
+  (if cond nil body))
+
+; === Работа с числами ===
+
+; Проверка на чётность
+(fn even? (n) (= (% n 2) 0))
+
+; Проверка на нечётность
+(fn odd? (n) (= (% n 2) 1))
+
+; Проверка на положительность
+(fn positive? (n) (> n 0))
+
+; Проверка на отрицательность
+(fn negative? (n) (< n 0))
+
+; Проверка на ноль
+(fn zero? (n) (= n 0))
+
+; Инкремент
+(fn inc (n) (+ n 1))
+
+; Декремент
+(fn dec (n) (- n 1))
+
+; Удвоение
+(fn double (n) (* n 2))
+
+; Половина
+(fn half (n) (/ n 2))
+
+; Квадрат
+(fn square (n) (* n n))
+
+; Куб
+(fn cube (n) (* n (* n n)))
+
+; Знак числа
+(fn sign (n)
+  (if (> n 0) 1
+    (if (< n 0) -1 0)))
+
+; Ограничение в диапазоне
+(fn clamp (x low high)
+  (min high (max low x)))
+
+; === Экспорты ===
+(export
+  true false nil
+  id const compose apply flip
+  and-fn or-fn not-fn
+  or-else when unless
+  even? odd? positive? negative? zero?
+  inc dec double half square cube sign clamp)

@@ -1,0 +1,92 @@
+; ASG Error Handling Test
+
+(print "=== Error Handling ===")
+
+; Test throw and catch
+(print "Test 1: Basic try/catch")
+(let result1
+  (try
+    (throw "Something went wrong!")
+    (catch e
+      (concat "Caught: " (error-message e)))))
+(print result1)
+
+; Test successful execution (no error)
+(print "Test 2: No error case")
+(let result2
+  (try
+    (+ 10 20)
+    (catch e
+      "This should not run")))
+(print result2)
+
+; Test is-error
+(print "Test 3: is-error check")
+(let err (throw "test error"))
+(print (is-error err))  ; true
+(print (is-error 42))   ; false
+
+; Test error-message
+(print "Test 4: error-message")
+(let err2 (throw "Custom error message"))
+(print (error-message err2))
+
+; Test catching runtime errors (division by zero simulation)
+(print "Test 5: Catch runtime error")
+(fn risky-divide (a b)
+  (if (== b 0)
+    (throw "Division by zero!")
+    (/ a b)))
+
+(let result3
+  (try
+    (risky-divide 10 0)
+    (catch e
+      (concat "Error handled: " (error-message e)))))
+(print result3)
+
+; Test successful division
+(print "Test 6: Successful risky operation")
+(let result4
+  (try
+    (risky-divide 20 4)
+    (catch e
+      -1)))
+(print result4)
+
+; Test nested try/catch
+(print "Test 7: Nested try/catch")
+(let result5
+  (try
+    (try
+      (throw "Inner error")
+      (catch e1
+        (throw (concat "Wrapped: " (error-message e1)))))
+    (catch e2
+      (error-message e2))))
+(print result5)
+
+; Error in function
+(print "Test 8: Error from function")
+(fn validate-age (age)
+  (if (< age 0)
+    (throw "Age cannot be negative")
+    (if (> age 150)
+      (throw "Age seems unrealistic")
+      age)))
+
+(let result6
+  (try
+    (validate-age -5)
+    (catch e
+      (concat "Validation failed: " (error-message e)))))
+(print result6)
+
+(let result7
+  (try
+    (validate-age 25)
+    (catch e
+      0)))
+(print result7)
+
+(print "=== ERROR TESTS PASSED ===")

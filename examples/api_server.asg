@@ -1,0 +1,81 @@
+; ============================================
+; REST API SERVER EXAMPLE
+; A simple JSON API with CRUD-like endpoints
+;
+; Run: cargo run --features web -- examples/api_server.asg
+; Then: curl http://localhost:3000/api/users
+; ============================================
+
+(print "Starting ASG REST API Server...")
+(print "")
+
+; In-memory "database"
+(let db (dict
+  "users" (array
+    (dict "id" 1 "name" "Alice" "email" "alice@example.com")
+    (dict "id" 2 "name" "Bob" "email" "bob@example.com")
+    (dict "id" 3 "name" "Charlie" "email" "charlie@example.com"))
+  "counter" 4))
+
+; API handlers
+(fn api-list-users (req)
+  (json-encode (dict
+    "status" "ok"
+    "count" (length (dict-get db "users"))
+    "users" (dict-get db "users"))))
+
+(fn api-get-user (req id)
+  (do
+    (let users (dict-get db "users"))
+    (let found (filter users (lambda (u) (== (dict-get u "id") id))))
+    (if (> (length found) 0)
+      (json-encode (dict "status" "ok" "user" (first found)))
+      (json-encode (dict "status" "error" "message" "User not found")))))
+
+(fn api-stats (req)
+  (do
+    (let users (dict-get db "users"))
+    (json-encode (dict
+      "status" "ok"
+      "total_users" (length users)
+      "api_version" "1.0"
+      "server" "ASG v0.7.0"))))
+
+; Router
+(fn router (req)
+  (do
+    (let path (dict-get req "path"))
+    (let method (dict-get req "method"))
+
+    (if (== path "/")
+      (json-encode (dict
+        "message" "Welcome to ASG API"
+        "endpoints" (array
+          "/api/users"
+          "/api/users/:id"
+          "/api/stats")))
+    (if (== path "/api/users")
+      (api-list-users req)
+    (if (== path "/api/users/1")
+      (api-get-user req 1)
+    (if (== path "/api/users/2")
+      (api-get-user req 2)
+    (if (== path "/api/users/3")
+      (api-get-user req 3)
+    (if (== path "/api/stats")
+      (api-stats req)
+      (json-encode (dict
+        "status" "error"
+        "message" "Not found"
+        "path" path))))))))))
+
+; Start server on port 3000
+(print "API Server running at http://localhost:3000")
+(print "")
+(print "Available endpoints:")
+(print "  GET /             - API info")
+(print "  GET /api/users    - List all users")
+(print "  GET /api/users/1  - Get user by ID")
+(print "  GET /api/stats    - Server statistics")
+(print "")
+(http-serve 3000 router)

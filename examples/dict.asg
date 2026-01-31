@@ -1,0 +1,66 @@
+; ASG Dict (HashMap) Test
+
+(print "=== Dict/HashMap ===")
+
+; Create dict
+(print "Create dict:")
+(let person (dict "name" "Alice" "age" 30 "active" true))
+(print person)
+
+; Dict get
+(print "dict-get name:")
+(print (dict-get person "name"))
+
+(print "dict-get age:")
+(print (dict-get person "age"))
+
+; Dict set (returns new dict)
+(print "dict-set city:")
+(let person2 (dict-set person "city" "Moscow"))
+(print person2)
+
+; Dict has
+(print "dict-has name:")
+(print (dict-has person "name"))
+
+(print "dict-has city (original):")
+(print (dict-has person "city"))
+
+(print "dict-has city (updated):")
+(print (dict-has person2 "city"))
+
+; Dict remove
+(print "dict-remove age:")
+(let person3 (dict-remove person "age"))
+(print person3)
+
+; Dict keys
+(print "dict-keys:")
+(print (dict-keys person))
+
+; Dict values
+(print "dict-values:")
+(print (dict-values person))
+
+; Dict size
+(print "dict-size:")
+(print (dict-size person))
+
+; Dict merge
+(print "dict-merge:")
+(let extra (dict "email" "alice@example.com" "phone" "123-456"))
+(let merged (dict-merge person extra))
+(print merged)
+
+; Nested dict
+(print "Nested dict:")
+(let nested (dict "user" (dict "id" 1 "name" "Bob") "status" "ok"))
+(print nested)
+
+; Empty dict
+(print "Empty dict:")
+(let empty (dict))
+(print empty)
+(print (dict-size empty))
+
+(print "=== DICT TESTS PASSED ===")

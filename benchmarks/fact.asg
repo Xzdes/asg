@@ -1,0 +1,20 @@
+; Factorial Benchmark
+; Compute factorial(20) 100,000 times
+
+(fn factorial (n)
+  (if (<= n 1)
+      1
+      (* n (factorial (- n 1)))))
+
+(let iterations 100000)
+(let i 0)
+(let result 0)
+
+(while (< i iterations)
+  (do
+    (set result (factorial 20))
+    (set i (+ i 1))))
+
+(print "=== Factorial Benchmark ===")
+(print "factorial(20) x 100000 = ")
+(print result)

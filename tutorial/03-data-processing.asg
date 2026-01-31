@@ -1,0 +1,245 @@
+; =====================================================
+; ASG Tutorial: Data Processing Pipeline
+; =====================================================
+;
+; This example demonstrates data processing:
+; - Parsing structured data (CSV/JSON)
+; - Transforming and enriching records
+; - Filtering and aggregation
+; - Generating reports
+;
+; Run:
+;   cargo run --bin asg -- tutorial/03-data-processing.asg
+;
+; =====================================================
+
+; === Sample Data ===
+
+; Sample sales data (CSV format)
+(let SALES_CSV
+"id,product,category,price,quantity,date
+1,Laptop,Electronics,999.99,2,2024-01-15
+2,Mouse,Electronics,29.99,10,2024-01-15
+3,Keyboard,Electronics,79.99,5,2024-01-16
+4,Monitor,Electronics,349.99,3,2024-01-16
+5,Headphones,Electronics,149.99,8,2024-01-17
+6,USB Cable,Accessories,9.99,25,2024-01-17
+7,Mousepad,Accessories,19.99,15,2024-01-18
+8,Webcam,Electronics,89.99,6,2024-01-18
+9,Desk Lamp,Office,45.99,10,2024-01-19
+10,Notebook,Office,12.99,50,2024-01-19")
+
+; === CSV Parser ===
+
+; Parse CSV string into list of dicts
+(fn parse-csv (csv-string)
+  (let lines (str-split csv-string "\n"))
+  (let header (parse-csv-line (get lines 0)))
+  (let data-lines (rest lines))
+  (map data-lines (lambda (line)
+    (row-to-dict header (parse-csv-line line)))))
+
+; Parse a single CSV line
+(fn parse-csv-line (line)
+  (str-split line ","))
+
+; Convert row to dict using header as keys
+(fn row-to-dict (headers values)
+  (reduce (range (length headers)) (dict)
+    (lambda (acc i)
+      (dict-set acc (get headers i) (get values i)))))
+
+; === Data Transformation ===
+
+; Parse numeric fields
+(fn parse-record (record)
+  (let price (parse-float (dict-get record "price" "0")))
+  (let quantity (parse-int (dict-get record "quantity" "0")))
+  (let id (parse-int (dict-get record "id" "0")))
+  (|> record
+      (dict-set "id" id)
+      (dict-set "price" price)
+      (dict-set "quantity" quantity)))
+
+; Add computed fields
+(fn enrich-record (record)
+  (let price (dict-get record "price"))
+  (let quantity (dict-get record "quantity"))
+  (let total (* price quantity))
+  (let margin (* total 0.3))  ; 30% margin
+  (|> record
+      (dict-set "total" total)
+      (dict-set "margin" margin)
+      (dict-set "unit-margin" (* price 0.3))))
+
+; === Filtering ===
+
+; Filter by category
+(fn filter-by-category (records category)
+  (filter records (lambda (r)
+    (= (dict-get r "category") category))))
+
+; Filter by minimum total
+(fn filter-by-min-total (records min-total)
+  (filter records (lambda (r)
+    (>= (dict-get r "total") min-total))))
+
+; Filter by date range
+(fn filter-by-date (records start-date end-date)
+  (filter records (lambda (r)
+    (let date (dict-get r "date"))
+    (and (>= date start-date) (<= date end-date)))))
+
+; === Aggregation ===
+
+; Sum a field across records
+(fn sum-field (records field)
+  (reduce records 0
+    (lambda (acc r)
+      (+ acc (dict-get r field 0)))))
+
+; Average a field
+(fn avg-field (records field)
+  (if (= (length records) 0)
+      0
+      (/ (sum-field records field) (length records))))
+
+; Group by a field
+(fn group-by-field (records field)
+  (reduce records (dict)
+    (lambda (acc r)
+      (let key (dict-get r field))
+      (let group (dict-get acc key (array)))
+      (dict-set acc key (append group (array r))))))
+
+; Aggregate grouped data
+(fn aggregate-groups (groups)
+  (let keys (dict-keys groups))
+  (map keys (lambda (key)
+    (let group (dict-get groups key))
+    (dict
+      "category" key
+      "count" (length group)
+      "total-revenue" (sum-field group "total")
+      "total-margin" (sum-field group "margin")
+      "avg-price" (avg-field group "price")))))
+
+; === Report Generation ===
+
+; Format currency
+(fn format-currency (amount)
+  (concat "$" (str (round (* amount 100) 100))))
+
+; Print a separator line
+(fn print-separator ()
+  (print "----------------------------------------------------"))
+
+; Print summary report
+(fn print-summary (records)
+  (print "")
+  (print "=============== SALES SUMMARY REPORT ===============")
+  (print-separator)
+  (print "")
+
+  (let total-revenue (sum-field records "total"))
+  (let total-margin (sum-field records "margin"))
+  (let total-items (sum-field records "quantity"))
+  (let avg-order (avg-field records "total"))
+
+  (print (concat "Total Records:     " (str (length records))))
+  (print (concat "Total Items Sold:  " (str total-items)))
+  (print (concat "Total Revenue:     " (format-currency total-revenue)))
+  (print (concat "Total Margin:      " (format-currency total-margin)))
+  (print (concat "Average Order:     " (format-currency avg-order)))
+  (print ""))
+
+; Print category breakdown
+(fn print-category-report (records)
+  (print "")
+  (print "============= CATEGORY BREAKDOWN =============")
+  (print-separator)
+  (print "")
+
+  (let groups (group-by-field records "category"))
+  (let aggregated (aggregate-groups groups))
+
+  (for-each aggregated (lambda (cat)
+    (print (concat "Category: " (dict-get cat "category")))
+    (print (concat "  Products:  " (str (dict-get cat "count"))))
+    (print (concat "  Revenue:   " (format-currency (dict-get cat "total-revenue"))))
+    (print (concat "  Margin:    " (format-currency (dict-get cat "total-margin"))))
+    (print (concat "  Avg Price: " (format-currency (dict-get cat "avg-price"))))
+    (print ""))))
+
+; Print top products
+(fn print-top-products (records n)
+  (print "")
+  (print "============= TOP PRODUCTS BY REVENUE =============")
+  (print-separator)
+  (print "")
+
+  ; Sort by total (descending)
+  (let sorted (sort-by records (lambda (r) (- 0 (dict-get r "total")))))
+  (let top (take sorted n))
+
+  (let rank 1)
+  (for-each top (lambda (r)
+    (print (concat
+      (str rank) ". "
+      (dict-get r "product")
+      " - "
+      (format-currency (dict-get r "total"))
+      " (" (str (dict-get r "quantity")) " units)"))
+    (set rank (+ rank 1))))
+
+  (print ""))
+
+; Export to JSON
+(fn export-to-json (records filename)
+  (let json-data (dict
+    "generated" "2024-01-20T00:00:00Z"
+    "record-count" (length records)
+    "records" records))
+  ; In production: (write-file filename (json-encode json-data))
+  (print (concat "Would export " (str (length records)) " records to " filename))
+  (print "")
+  (print "JSON Preview (first record):")
+  (print (json-encode (get records 0))))
+
+; === Main Pipeline ===
+
+(fn process-sales-data ()
+  (print "=== ASG Data Processing Demo ===")
+  (print "")
+  (print "Loading and parsing sales data...")
+
+  ; Step 1: Parse CSV
+  (let raw-records (parse-csv SALES_CSV))
+  (print (concat "Parsed " (str (length raw-records)) " records"))
+
+  ; Step 2: Parse numeric fields
+  (let parsed (map raw-records parse-record))
+
+  ; Step 3: Enrich with computed fields
+  (let enriched (map parsed enrich-record))
+  (print "Enriched records with totals and margins")
+
+  ; Step 4: Generate reports
+  (print-summary enriched)
+  (print-category-report enriched)
+  (print-top-products enriched 5)
+
+  ; Step 5: Filter and export
+  (let electronics (filter-by-category enriched "Electronics"))
+  (print "")
+  (print "=== Electronics Category Only ===")
+  (print-summary electronics)
+
+  ; Export
+  (export-to-json enriched "sales_report.json")
+
+  (print "")
+  (print "=== Processing Complete ==="))
+
+; Run the pipeline
+(process-sales-data)

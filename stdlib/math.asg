@@ -1,0 +1,155 @@
+; ASG Math Module
+; Математические функции и константы.
+
+(module math
+
+  ; === Константы ===
+  (let PI 3.141592653589793)
+  (let E 2.718281828459045)
+  (let TAU 6.283185307179586)    ; 2 * PI
+  (let PHI 1.618033988749895)    ; Золотое сечение
+  (let SQRT2 1.4142135623730951) ; √2
+  (let LN2 0.6931471805599453)   ; ln(2)
+  (let LN10 2.302585092994046)   ; ln(10)
+
+  ; === Тригонометрические функции ===
+  ; sin, cos, tan — встроенные
+
+  ; Котангенс
+  (fn cot (x) (/ 1 (tan x)))
+
+  ; Секанс
+  (fn sec (x) (/ 1 (cos x)))
+
+  ; Косеканс
+  (fn csc (x) (/ 1 (sin x)))
+
+  ; Градусы в радианы
+  (fn deg-to-rad (deg) (* deg (/ PI 180)))
+
+  ; Радианы в градусы
+  (fn rad-to-deg (rad) (* rad (/ 180 PI)))
+
+  ; === Гиперболические функции ===
+
+  ; Гиперболический синус
+  (fn sinh (x)
+    (/ (- (exp x) (exp (- 0 x))) 2))
+
+  ; Гиперболический косинус
+  (fn cosh (x)
+    (/ (+ (exp x) (exp (- 0 x))) 2))
+
+  ; Гиперболический тангенс
+  (fn tanh (x)
+    (/ (sinh x) (cosh x)))
+
+  ; === Степенные функции ===
+
+  ; Квадрат
+  (fn square (x) (* x x))
+
+  ; Куб
+  (fn cube (x) (* x (* x x)))
+
+  ; n-ая степень (целая)
+  (fn power (base n)
+    (if (= n 0) 1
+      (if (< n 0)
+        (/ 1 (power base (- 0 n)))
+        (* base (power base (- n 1))))))
+
+  ; === Корни ===
+
+  ; Кубический корень
+  (fn cbrt (x)
+    (pow x (/ 1 3)))
+
+  ; n-ый корень
+  (fn nth-root (x n)
+    (pow x (/ 1 n)))
+
+  ; === Логарифмы ===
+
+  ; Логарифм по основанию 2
+  (fn log2 (x) (/ (ln x) LN2))
+
+  ; Логарифм по произвольному основанию
+  (fn log-base (base x)
+    (/ (ln x) (ln base)))
+
+  ; === Статистика ===
+
+  ; Факториал
+  (fn factorial (n)
+    (if (<= n 1) 1
+      (* n (factorial (- n 1)))))
+
+  ; Биномиальный коэффициент C(n, k)
+  (fn binomial (n k)
+    (/ (factorial n)
+       (* (factorial k) (factorial (- n k)))))
+
+  ; GCD (наибольший общий делитель)
+  (fn gcd (a b)
+    (if (= b 0) a
+      (gcd b (% a b))))
+
+  ; LCM (наименьшее общее кратное)
+  (fn lcm (a b)
+    (/ (* a b) (gcd a b)))
+
+  ; Проверка на простоту (наивная)
+  (fn prime? (n)
+    (if (<= n 1) false
+      (if (<= n 3) true
+        (if (= (% n 2) 0) false
+          (prime-check n 3)))))
+
+  (fn prime-check (n i)
+    (if (> (* i i) n) true
+      (if (= (% n i) 0) false
+        (prime-check n (+ i 2)))))
+
+  ; === Векторы (как массивы) ===
+
+  ; Скалярное произведение
+  (fn dot (v1 v2)
+    (reduce (map (range 0 (length v1))
+                 (lambda (i) (* (get v1 i) (get v2 i))))
+            0 +))
+
+  ; Норма (длина вектора)
+  (fn norm (v)
+    (sqrt (dot v v)))
+
+  ; Нормализация
+  (fn normalize (v)
+    (let n (norm v))
+    (map v (lambda (x) (/ x n))))
+
+  ; === Интерполяция ===
+
+  ; Линейная интерполяция
+  (fn lerp (a b t)
+    (+ (* a (- 1 t)) (* b t)))
+
+  ; Ограничение 0..1
+  (fn clamp01 (x)
+    (min 1 (max 0 x)))
+
+  ; Smooth step
+  (fn smoothstep (edge0 edge1 x)
+    (let t (clamp01 (/ (- x edge0) (- edge1 edge0))))
+    (* t (* t (- 3 (* 2 t)))))
+
+  ; === Экспорты ===
+  (export
+    PI E TAU PHI SQRT2 LN2 LN10
+    cot sec csc deg-to-rad rad-to-deg
+    sinh cosh tanh
+    square cube power
+    cbrt nth-root log2 log-base
+    factorial binomial gcd lcm prime?
+    dot norm normalize
+    lerp clamp01 smoothstep))

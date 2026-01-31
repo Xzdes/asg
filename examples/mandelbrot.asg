@@ -1,0 +1,111 @@
+; ============================================
+; MANDELBROT FRACTAL - ASCII ART
+; Pure ASG implementation
+;
+; Created with AI assistance (Claude) to
+; demonstrate ASG language capabilities:
+; - Complex number arithmetic
+; - Nested loops and conditionals
+; - String manipulation
+; - Mathematical computations
+;
+; Run: cargo run --release --bin asg -- examples/mandelbrot.asg
+; ============================================
+
+(print "")
+(print "  M A N D E L B R O T   S E T")
+(print "  ============================")
+(print "")
+
+(let w 70)
+(let h 35)
+
+(let y 0)
+(while (< y h)
+  (do
+    (let line "")
+    (let x 0)
+    (while (< x w)
+      (do
+        (let cr (+ -2.2 (* (/ (* x 1.0) w) 3.0)))
+        (let ci (+ -1.2 (* (/ (* y 1.0) h) 2.4)))
+
+        (let zr 0.0)
+        (let zi 0.0)
+        (let i 0)
+
+        ; iter 1-2
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 1)) ())
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 2)) ())
+        ; iter 3-4
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 3)) ())
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 4)) ())
+        ; iter 5-6
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 5)) ())
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 6)) ())
+        ; iter 7-8
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 7)) ())
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 8)) ())
+        ; iter 9-10
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 9)) ())
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 10)) ())
+        ; iter 11-12
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 11)) ())
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 12)) ())
+        ; iter 13-14
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 13)) ())
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 14)) ())
+        ; iter 15-16
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (do (let tr (+ (- (* zr zr) (* zi zi)) cr))
+              (set zi (+ (* 2.0 (* zr zi)) ci)) (set zr tr) (set i 15)) ())
+        (if (< (+ (* zr zr) (* zi zi)) 4.0)
+          (set i 16) ())
+
+        ; Map iterations to ASCII character
+        (let ch (if (== i 16) " "
+                (if (< i 2) "."
+                (if (< i 4) ":"
+                (if (< i 6) "-"
+                (if (< i 8) "="
+                (if (< i 10) "+"
+                (if (< i 12) "*"
+                (if (< i 14) "#"
+                "%")))))))))
+
+        (set line (concat line ch))
+        (set x (+ x 1))))
+    (print line)
+    (set y (+ y 1))))
+
+(print "")
+(print "  Rendered with ASG v0.6.0")
+(print "")

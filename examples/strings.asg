@@ -1,0 +1,80 @@
+; ASG String Operations Test
+
+(print "=== String Operations ===")
+
+; Test concat
+(let hello "Hello")
+(let world "World")
+(let greeting (concat (concat hello ", ") world))
+(print "concat:")
+(print greeting)  ; "Hello, World"
+
+; Test str-length
+(print "str-length 'Hello':")
+(print (str-length hello))  ; 5
+
+; Test substring
+(let text "Hello, World!")
+(print "substring 0-5:")
+(print (substring text 0 5))  ; "Hello"
+(print "substring 7-12:")
+(print (substring text 7 12))  ; "World"
+
+; Test str-split
+(let csv "apple,banana,cherry")
+(let fruits (str-split csv ","))
+(print "str-split by ',':")
+(print fruits)  ; ["apple", "banana", "cherry"]
+
+; Test str-join
+(let words (array "one" "two" "three"))
+(let joined (str-join words "-"))
+(print "str-join with '-':")
+(print joined)  ; "one-two-three"
+
+; Test str-contains
+(print "str-contains 'Hello' in greeting:")
+(print (str-contains greeting "Hello"))  ; true
+(print "str-contains 'Goodbye' in greeting:")
+(print (str-contains greeting "Goodbye"))  ; false
+
+; Test str-replace
+(let original "Hello, World!")
+(let replaced (str-replace original "World" "ASG"))
+(print "str-replace World -> ASG:")
+(print replaced)  ; "Hello, ASG!"
+
+; Test to-string
+(print "to-string 42:")
+(print (to-string 42))
+(print "to-string 3.14:")
+(print (to-string 3.14))
+(print "to-string true:")
+(print (to-string true))
+
+; Test parse-int
+(let num-str "12345")
+(let num (parse-int num-str))
+(print "parse-int '12345':")
+(print num)  ; 12345
+(print "num + 1:")
+(print (+ num 1))  ; 12346
+
+; Test parse-float
+(let float-str "3.14159")
+(let pi (parse-float float-str))
+(print "parse-float '3.14159':")
+(print pi)  ; 3.14159
+
+; Test str-trim
+(let padded "   hello   ")
+(print "str-trim '   hello   ':")
+(print (str-trim padded))  ; "hello"
+
+; Test str-upper / str-lower
+(print "str-upper 'hello':")
+(print (str-upper "hello"))  ; "HELLO"
+(print "str-lower 'WORLD':")
+(print (str-lower "WORLD"))  ; "world"
+
+(print "=== ALL STRING TESTS PASSED ===")

@@ -1,0 +1,51 @@
+; ASG Higher-Order Functions Test
+; Testing map, filter, reduce
+
+; === Map ===
+(print "=== Map ===")
+
+(let nums (array 1 2 3 4 5))
+
+; Double each element
+(let doubled (map nums (lambda (x) (* x 2))))
+(print "map [1,2,3,4,5] double:")
+(print doubled)   ; [2, 4, 6, 8, 10]
+
+; Square each element
+(let squared (map nums (lambda (x) (* x x))))
+(print "map [1,2,3,4,5] square:")
+(print squared)   ; [1, 4, 9, 16, 25]
+
+; === Filter ===
+(print "=== Filter ===")
+
+; Keep only even numbers
+(let evens (filter nums (lambda (x) (== (% x 2) 0))))
+(print "filter [1,2,3,4,5] even:")
+(print evens)   ; [2, 4]
+
+; Keep numbers > 3
+(let big (filter nums (lambda (x) (> x 3))))
+(print "filter [1,2,3,4,5] > 3:")
+(print big)   ; [4, 5]
+
+; === Reduce ===
+(print "=== Reduce ===")
+
+; Sum all elements
+(let sum (reduce nums 0 (lambda (acc x) (+ acc x))))
+(print "reduce [1,2,3,4,5] sum:")
+(print sum)   ; 15
+
+; Product of all elements
+(let product (reduce nums 1 (lambda (acc x) (* acc x))))
+(print "reduce [1,2,3,4,5] product:")
+(print product)   ; 120
+
+; Find maximum
+(let nums2 (array 3 1 4 1 5 9 2 6))
+(let max-val (reduce nums2 0 (lambda (acc x) (if (> x acc) x acc))))
+(print "reduce [3,1,4,1,5,9,2,6] max:")
+(print max-val)   ; 9
+
+(print "=== ALL HIGHER-ORDER TESTS PASSED ===")

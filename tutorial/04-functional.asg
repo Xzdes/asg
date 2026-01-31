@@ -1,0 +1,373 @@
+; =====================================================
+; ASG Tutorial: Functional Programming Patterns
+; =====================================================
+;
+; This example demonstrates advanced functional programming
+; techniques in ASG:
+; - Higher-order functions
+; - Currying and partial application
+; - Function composition
+; - Memoization
+; - Lazy evaluation
+; - Monadic patterns
+;
+; Run:
+;   cargo run --bin asg -- tutorial/04-functional.asg
+;
+; =====================================================
+
+(print "=== ASG Functional Programming Demo ===")
+(print "")
+
+; ===============================================
+; 1. Higher-Order Functions
+; ===============================================
+
+(print "1. HIGHER-ORDER FUNCTIONS")
+(print "-------------------------")
+
+; map - transform each element
+(let numbers (array 1 2 3 4 5))
+(let doubled (map numbers (lambda (x) (* x 2))))
+(print (concat "Original: " (str numbers)))
+(print (concat "Doubled:  " (str doubled)))
+
+; filter - keep elements matching predicate
+(let evens (filter numbers (lambda (x) (= (% x 2) 0))))
+(print (concat "Evens:    " (str evens)))
+
+; reduce - accumulate to single value
+(let sum (reduce numbers 0 (lambda (acc x) (+ acc x))))
+(print (concat "Sum:      " (str sum)))
+
+(print "")
+
+; ===============================================
+; 2. Currying and Partial Application
+; ===============================================
+
+(print "2. CURRYING & PARTIAL APPLICATION")
+(print "----------------------------------")
+
+; Manual curry for 2 arguments
+(fn curry2 (f)
+  (lambda (x)
+    (lambda (y)
+      (f x y))))
+
+; Example: curried add
+(let add-curried (curry2 (lambda (x y) (+ x y))))
+(let add5 (add-curried 5))
+(print (concat "(add5 10) = " (str (add5 10))))
+
+; Partial application
+(fn partial (f first-arg)
+  (lambda (&rest)
+    (apply f (cons first-arg rest))))
+
+(let multiply (lambda (x y) (* x y)))
+(let double (partial multiply 2))
+(let triple (partial multiply 3))
+
+(print (concat "(double 7) = " (str (double 7))))
+(print (concat "(triple 7) = " (str (triple 7))))
+
+(print "")
+
+; ===============================================
+; 3. Function Composition
+; ===============================================
+
+(print "3. FUNCTION COMPOSITION")
+(print "-----------------------")
+
+; Compose two functions (right to left)
+(fn compose (f g)
+  (lambda (x)
+    (f (g x))))
+
+; Pipe (left to right composition)
+(fn pipe (f g)
+  (lambda (x)
+    (g (f x))))
+
+(let square (lambda (x) (* x x)))
+(let inc (lambda (x) (+ x 1)))
+(let dec (lambda (x) (- x 1)))
+
+; compose: apply right function first
+(let square-then-inc (compose inc square))
+(print (concat "(square then inc) 5 = " (str (square-then-inc 5))))  ; 26
+
+; pipe: apply left function first
+(let inc-then-square (pipe inc square))
+(print (concat "(inc then square) 5 = " (str (inc-then-square 5))))  ; 36
+
+; Compose many functions
+(fn compose-all (&fns)
+  (reduce fns identity compose))
+
+(let pipeline (compose-all inc square dec))
+(print (concat "Pipeline (dec -> square -> inc) 5 = " (str (pipeline 5))))
+
+(print "")
+
+; ===============================================
+; 4. Memoization
+; ===============================================
+
+(print "4. MEMOIZATION")
+(print "--------------")
+
+; Simple memoization for single-argument functions
+(fn memoize (f)
+  (let cache (dict))
+  (lambda (x)
+    (if (dict-has cache x)
+        (dict-get cache x)
+        (do
+          (let result (f x))
+          (dict-set cache x result)
+          result))))
+
+; Fibonacci without memoization (slow)
+(fn fib-slow (n)
+  (if (<= n 1)
+      n
+      (+ (fib-slow (- n 1)) (fib-slow (- n 2)))))
+
+; With memoization
+(let fib (memoize
+  (lambda (n)
+    (if (<= n 1)
+        n
+        (+ (fib (- n 1)) (fib (- n 2)))))))
+
+(print "Fibonacci sequence (memoized):")
+(print (concat "fib(10) = " (str (fib 10))))
+(print (concat "fib(20) = " (str (fib 20))))
+
+(print "")
+
+; ===============================================
+; 5. Lazy Sequences
+; ===============================================
+
+(print "5. LAZY SEQUENCES")
+(print "-----------------")
+
+; Lazy cons cell
+(fn lazy-cons (head tail-fn)
+  (dict "head" head "tail" tail-fn))
+
+; Force evaluation
+(fn force (lazy-seq)
+  (if (fn? (dict-get lazy-seq "tail"))
+      (dict-set lazy-seq "tail" ((dict-get lazy-seq "tail")))
+      lazy-seq))
+
+; Take n elements from lazy sequence
+(fn lazy-take (n lazy-seq)
+  (if (or (<= n 0) (= lazy-seq nil))
+      (array)
+      (let forced (force lazy-seq))
+      (cons (dict-get forced "head")
+            (lazy-take (- n 1) (dict-get forced "tail")))))
+
+; Infinite sequence of natural numbers
+(fn naturals-from (n)
+  (lazy-cons n (lambda () (naturals-from (+ n 1)))))
+
+(let naturals (naturals-from 1))
+(print (concat "First 10 naturals: " (str (lazy-take 10 naturals))))
+
+; Infinite sequence of squares
+(fn squares-from (n)
+  (lazy-cons (* n n) (lambda () (squares-from (+ n 1)))))
+
+(let squares (squares-from 1))
+(print (concat "First 10 squares:  " (str (lazy-take 10 squares))))
+
+(print "")
+
+; ===============================================
+; 6. Maybe Monad (Null Safety)
+; ===============================================
+
+(print "6. MAYBE MONAD (NULL SAFETY)")
+(print "----------------------------")
+
+; Safe operations that might fail
+(fn safe-div (a b)
+  (if (= b 0) nil (/ a b)))
+
+(fn safe-head (arr)
+  (if (= (length arr) 0) nil (get arr 0)))
+
+(fn safe-sqrt (x)
+  (if (< x 0) nil (sqrt x)))
+
+; Maybe bind (chain operations)
+(fn maybe-bind (value f)
+  (if (= value nil)
+      nil
+      (f value)))
+
+; Maybe with default
+(fn maybe-default (default value)
+  (if (= value nil) default value))
+
+; Chain safe operations
+(fn safe-calculation (x y z)
+  (|> x
+      (maybe-bind (lambda (a) (safe-div a y)))
+      (maybe-bind (lambda (b) (safe-div b z)))
+      (maybe-default 0)))
+
+(print (concat "safe-calculation(100, 5, 2) = " (str (safe-calculation 100 5 2))))
+(print (concat "safe-calculation(100, 0, 2) = " (str (safe-calculation 100 0 2))))
+(print (concat "safe-calculation(100, 5, 0) = " (str (safe-calculation 100 5 0))))
+
+(print "")
+
+; ===============================================
+; 7. Predicate Combinators
+; ===============================================
+
+(print "7. PREDICATE COMBINATORS")
+(print "------------------------")
+
+; Combine predicates with AND
+(fn pred-and (p1 p2)
+  (lambda (x) (and (p1 x) (p2 x))))
+
+; Combine predicates with OR
+(fn pred-or (p1 p2)
+  (lambda (x) (or (p1 x) (p2 x))))
+
+; Negate a predicate
+(fn pred-not (p)
+  (lambda (x) (not (p x))))
+
+; Example predicates
+(let positive? (lambda (x) (> x 0)))
+(let even? (lambda (x) (= (% x 2) 0)))
+(let small? (lambda (x) (< x 10)))
+
+; Combined predicates
+(let positive-and-even? (pred-and positive? even?))
+(let small-or-even? (pred-or small? even?))
+
+(let test-nums (array -4 -1 0 1 2 5 10 12 15))
+
+(print (concat "Numbers: " (str test-nums)))
+(print (concat "Positive and even: " (str (filter test-nums positive-and-even?))))
+(print (concat "Small or even: " (str (filter test-nums small-or-even?))))
+
+(print "")
+
+; ===============================================
+; 8. Transducers (Efficient Transformations)
+; ===============================================
+
+(print "8. TRANSDUCERS")
+(print "--------------")
+
+; Transducer: map transformation
+(fn xf-map (f)
+  (lambda (rf)
+    (lambda (acc item)
+      (rf acc (f item)))))
+
+; Transducer: filter transformation
+(fn xf-filter (pred)
+  (lambda (rf)
+    (lambda (acc item)
+      (if (pred item)
+          (rf acc item)
+          acc))))
+
+; Transducer: take n items
+(fn xf-take (n)
+  (let count 0)
+  (lambda (rf)
+    (lambda (acc item)
+      (if (< count n)
+          (do
+            (set count (+ count 1))
+            (rf acc item))
+          acc))))
+
+; Compose transducers
+(let xf-pipeline
+  (compose
+    (xf-filter even?)
+    (xf-map (lambda (x) (* x 10)))))
+
+; Apply transducer with reduce
+(fn transduce (xf rf init coll)
+  (let xrf (xf rf))
+  (reduce coll init xrf))
+
+; Collecting reducer
+(fn conj (arr item)
+  (append arr (array item)))
+
+(let result (transduce xf-pipeline conj (array) (range 1 11)))
+(print (concat "Filter evens then multiply by 10: " (str result)))
+
+(print "")
+
+; ===============================================
+; 9. Pattern Matching with Guards
+; ===============================================
+
+(print "9. PATTERN MATCHING WITH GUARDS")
+(print "-------------------------------")
+
+; Classify a number
+(fn classify (n)
+  (match n
+    ; Specific values
+    (0 "zero")
+    (1 "one")
+    ; Guard: negative
+    ((? (lambda (x) (< x 0))) "negative")
+    ; Guard: even
+    ((? even?) "even positive")
+    ; Default: odd positive
+    (_ "odd positive")))
+
+(for-each (array -5 0 1 2 3 4 7)
+  (lambda (n)
+    (print (concat "classify(" (str n) ") = " (classify n)))))
+
+(print "")
+
+; ===============================================
+; 10. Y Combinator (Anonymous Recursion)
+; ===============================================
+
+(print "10. Y COMBINATOR")
+(print "----------------")
+
+; Y combinator for anonymous recursion
+(fn Y (f)
+  ((lambda (x) (f (lambda (y) ((x x) y))))
+   (lambda (x) (f (lambda (y) ((x x) y))))))
+
+; Factorial using Y combinator (no explicit recursion)
+(let factorial-maker
+  (lambda (self)
+    (lambda (n)
+      (if (<= n 1)
+          1
+          (* n (self (- n 1)))))))
+
+(let factorial (Y factorial-maker))
+
+(print (concat "Factorial 5 (via Y combinator): " (str (factorial 5))))
+(print (concat "Factorial 10 (via Y combinator): " (str (factorial 10))))
+
+(print "")
+(print "=== Functional Programming Demo Complete ===")

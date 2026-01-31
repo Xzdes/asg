@@ -1,0 +1,156 @@
+{
+  "name": "asg-lang",
+  "displayName": "ASG Language",
+  "description": "Language support for ASG - Programming language built on Abstract Syntax Graph",
+  "version": "1.0.0",
+  "publisher": "xzdes",
+  "author": {
+    "name": "Xzdes",
+    "email": "xzdes@yandex.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Xzdes/asg"
+  },
+  "bugs": {
+    "url": "https://github.com/Xzdes/asg/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Linters"
+  ],
+  "keywords": [
+    "asg",
+    "abstract-syntax-graph",
+    "lisp",
+    "s-expression",
+    "functional",
+    "compiler"
+  ],
+  "galleryBanner": {
+    "color": "#6366f1",
+    "theme": "dark"
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "asg",
+        "aliases": ["ASG", "asg"],
+        "extensions": [".asg"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "asg",
+        "scopeName": "source.asg",
+        "path": "./syntaxes/asg.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "asg",
+        "path": "./snippets/asg.json"
+      }
+    ],
+    "configuration": {
+      "title": "ASG",
+      "properties": {
+        "asg.lsp.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable ASG Language Server"
+        },
+        "asg.lsp.path": {
+          "type": "string",
+          "default": "asg-lsp",
+          "description": "Path to asg-lsp executable"
+        },
+        "asg.lsp.trace": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Trace communication with LSP server"
+        },
+        "asg.format.indentSize": {
+          "type": "number",
+          "default": 2,
+          "description": "Number of spaces for indentation"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "asg.runFile",
+        "title": "Run ASG File",
+        "category": "ASG"
+      },
+      {
+        "command": "asg.runSelection",
+        "title": "Run Selection in REPL",
+        "category": "ASG"
+      },
+      {
+        "command": "asg.startRepl",
+        "title": "Start ASG REPL",
+        "category": "ASG"
+      },
+      {
+        "command": "asg.restartLsp",
+        "title": "Restart Language Server",
+        "category": "ASG"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "asg.runFile",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorLangId == asg"
+      },
+      {
+        "command": "asg.runSelection",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorLangId == asg && editorHasSelection"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "asg.runFile",
+          "when": "editorLangId == asg",
+          "group": "asg"
+        },
+        {
+          "command": "asg.runSelection",
+          "when": "editorLangId == asg && editorHasSelection",
+          "group": "asg"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

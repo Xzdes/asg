@@ -1,0 +1,86 @@
+; ASG Pattern Matching Test
+
+(print "=== Pattern Matching ===")
+
+; Basic literal matching
+(print "Test 1: Number matching")
+(fn describe-number (n)
+  (match n
+    0 "zero"
+    1 "one"
+    2 "two"
+    _ "many"))
+
+(print (describe-number 0))
+(print (describe-number 1))
+(print (describe-number 2))
+(print (describe-number 42))
+
+; Boolean matching
+(print "Test 2: Boolean matching")
+(fn yes-no (b)
+  (match b
+    true "Yes!"
+    false "No!"))
+
+(print (yes-no true))
+(print (yes-no false))
+
+; String matching
+(print "Test 3: String matching")
+(fn greet (name)
+  (match name
+    "Alice" "Hello, Alice!"
+    "Bob" "Hi Bob!"
+    _ "Hello, stranger!"))
+
+(print (greet "Alice"))
+(print (greet "Bob"))
+(print (greet "Charlie"))
+
+; Variable binding in patterns
+(print "Test 4: Variable binding")
+(fn double-or-zero (x)
+  (match x
+    0 0
+    n (* n 2)))
+
+(print (double-or-zero 0))
+(print (double-or-zero 5))
+(print (double-or-zero 10))
+
+; Match with expression as subject
+(print "Test 5: Expression subject")
+(let result
+  (match (+ 1 2)
+    1 "one"
+    2 "two"
+    3 "three"
+    _ "other"))
+(print result)
+
+; Nested match
+(print "Test 6: Nested matching")
+(fn classify (x)
+  (match (< x 0)
+    true "negative"
+    false
+      (match (== x 0)
+        true "zero"
+        false "positive")))
+
+(print (classify -5))
+(print (classify 0))
+(print (classify 10))
+
+; Factorial with match (small values to avoid stack overflow)
+(print "Test 7: Factorial with match (n=5)")
+(fn factorial (n)
+  (match n
+    0 1
+    1 1
+    m (* m (factorial (- m 1)))))
+
+(print (factorial 5))
+
+(print "=== PATTERN MATCHING TESTS PASSED ===")

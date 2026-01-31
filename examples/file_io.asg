@@ -1,0 +1,30 @@
+; ASG File I/O Test
+
+(print "=== File I/O ===")
+
+; Test write-file
+(let test-file "test_output.txt")
+(write-file test-file "Hello from ASG!\nLine 2\n")
+(print "Wrote to test_output.txt")
+
+; Test file-exists
+(print "file-exists test_output.txt:")
+(print (file-exists test-file))  ; true
+(print "file-exists nonexistent.txt:")
+(print (file-exists "nonexistent.txt"))  ; false
+
+; Test read-file
+(print "read-file test_output.txt:")
+(let content (read-file test-file))
+(print content)
+
+; Test append-file
+(append-file test-file "Appended line\n")
+(print "After append:")
+(print (read-file test-file))
+
+; Read ASG source file
+(print "Reading examples/demo.asg:")
+(print (str-length (read-file "examples/demo.asg")))
+
+(print "=== FILE I/O TESTS PASSED ===")

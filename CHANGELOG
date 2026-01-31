@@ -1,0 +1,142 @@
+# Changelog ASG
+
+All notable changes to this project will be documented in this file.
+
+---
+
+## [1.0.0] - 2025-01-31 - Production Ready
+
+This release marks ASG as production-ready with complete toolchain.
+
+### ✨ New Features
+
+#### LLVM Backend (Complete)
+- Float operations (+, -, *, /, %)
+- String type `{ i64 len, i8* data }` with concat, length
+- Math intrinsics (sin, cos, sqrt, pow, exp, ln)
+- Mixed int/float arithmetic with auto-conversion
+- Print support for int, float, string
+
+#### WASM Backend (New!)
+- Full WebAssembly compilation via `wasm-encoder`
+- Support for int, float, bool, string literals
+- Arithmetic, comparisons, logic operations
+- If expressions, blocks, variables
+- Math functions via WASM intrinsics
+- Ready for browsers and Node.js
+
+#### Module System (New!)
+- `src/modules/registry.rs` — module registry
+- `src/modules/resolver.rs` — path resolution with caching
+- `src/modules/loader.rs` — parsing and loading with cycle detection
+- Syntax: `(import "module")`, `(export name1 name2)`
+- Support for relative imports (`./`, `../`)
+
+#### LSP Server (New!)
+- Separate crate `asg-lsp/`
+- Diagnostics with line:column positions
+- Autocomplete for keywords, builtins, symbols, snippets
+- Hover documentation for functions
+- Document symbols (functions, variables, modules)
+
+#### Standard Library (New!)
+- `stdlib/prelude.asg` — basics (id, compose, even?, inc, clamp)
+- `stdlib/math.asg` — math (PI, factorial, gcd, lerp, smoothstep)
+- `stdlib/list.asg` — lists (head, tail, zip, find, unique, group-by)
+- `stdlib/string.asg` — strings (starts-with?, pad-left, words, capitalize)
+- `stdlib/io.asg` — I/O (debug, assert, format, read-lines)
+- `stdlib/functional.asg` — FP (curry, memoize, Y-combinator, trampoline)
+
+#### Core Improvements
+- Added `span: Option<Span>` to ASG nodes for LSP and error messages
+- New error types: `ModuleNotFound`, `ModuleError`, `CircularImport`
+- 48 tests passing
+
+### 📦 New Dependencies
+- `wasm-encoder = "0.223"` (optional, feature: `wasm_backend`)
+- `tempfile = "3.17"` (dev)
+- `tower-lsp = "0.20"` (asg-lsp)
+- `tokio = "1"` (asg-lsp)
+
+### 🎯 v1.1 Roadmap
+- [ ] VSCode Extension — publish to marketplace
+- [ ] LLVM Closures — lambda lifting, environment capture
+- [ ] Tutorial — real-world examples
+- [ ] Benchmarks — vs Python, Lua, Node.js
+
+---
+
+## [0.7.0] - 2025-01-26 - Interactive & Web
+
+### ✨ New Features
+- Interactive Input: `(input)`, `(input-int "prompt")`, `(input-float)`
+- Console control: `(clear-screen)` for TUI applications
+- HTML Generation: `(html ...)`, `(div ...)`, `(h1 ...)`
+- JSON support: `(json-encode value)`, `(json-decode string)`
+- HTTP Server: `(http-serve port handler)` (requires `--features web`)
+- Native GUI skeleton: `(window ...)`, `(vbox ...)` (requires `--features gui`)
+
+---
+
+## [0.6.0] - 2025-01-20 - Functional Powerhouse
+
+### ✨ New Features
+- Dict/HashMap: `dict-get`, `dict-set`, `dict-keys`, `dict-values`, `dict-merge`
+- Pipe operator: `(|> value fn1 fn2 ...)`
+- Function composition: `(compose fn1 fn2 ...)`
+- Destructuring: `(let (a b c) array)`
+- List comprehensions: `(list-comp (* x x) x (range 1 10) (> x 5))`
+- Lazy sequences: `iterate`, `repeat`, `cycle`, `lazy-range`
+- Pattern matching: `(match expr (pattern1 result1) ...)`
+- Try/catch: `(try body (catch e handler))`
+- Variadic arithmetic: `(+ 1 2 3 4 5)`
+
+---
+
+## [0.5.0] - 2025-01-15 - Closures & Strings
+
+### ✨ New Features
+- Closures with environment capture
+- String operations: concat, substring, split, join
+- File I/O: read-file, write-file, file-exists
+- Math stdlib: sqrt, sin, cos, pow, abs, PI, E
+
+---
+
+## [0.4.0] - 2025-01-10 - Higher-Order Functions
+
+### ✨ New Features
+- Recursive functions
+- Higher-order functions: map, filter, reduce
+- Lambda expressions
+
+---
+
+## [0.3.0] - 2025-01-05 - Arrays & Control Flow
+
+### ✨ New Features
+- Integer division (//)
+- Print function
+- Array operations: length, set-index, nth, first, last
+- While loops and blocks (do)
+
+---
+
+## [0.2.0] - 2025-01-01 - Type System
+
+### ✨ New Features
+- Hindley-Milner type inference
+- Type checker with unification
+- Polymorphic functions
+
+---
+
+## [0.1.0] - 2024-08-25 - First Prototype
+
+### ✨ New Features
+- ASG foundation: `ASG`, `Node`, `Edge`
+- Working interpreter
+- Integer arithmetic
+- Autograd integration from Rusty Gradients
+- `TensorAdd` operation
+- Working `backward()` pass

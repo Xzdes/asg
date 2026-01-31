@@ -1,0 +1,53 @@
+[package]
+name = "asg-pkg"
+version = "1.0.0"
+edition = "2021"
+authors = ["Xzdes <xzdes@yandex.com>"]
+description = "Package manager for ASG programming language"
+license = "MIT"
+repository = "https://github.com/Xzdes/asg"
+keywords = ["asg", "package-manager", "dependencies"]
+categories = ["development-tools"]
+
+[[bin]]
+name = "asg-pkg"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4.4", features = ["derive"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+serde_json = "1.0"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+
+# File operations
+walkdir = "2.4"
+zip = "0.6"
+
+# Hashing
+sha2 = "0.10"
+hex = "0.4"
+
+# Async runtime (optional)
+tokio = { version = "1", features = ["full"], optional = true }
+
+# Semver
+semver = "1.0"
+
+# Directories
+dirs = "5.0"
+
+# Progress bar
+indicatif = "0.17"
+
+# Colors
+colored = "2.1"
+
+[features]
+default = []
+async = ["tokio"]

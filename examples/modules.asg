@@ -1,0 +1,41 @@
+; ASG Module/Import Test
+
+(print "=== Modules and Imports ===")
+
+; Import a math library
+(import "examples/lib_math.asg")
+
+; Use imported functions
+(print "square(5):")
+(print (square 5))
+
+(print "cube(3):")
+(print (cube 3))
+
+(print "power(2, 8):")
+(print (power 2 8))
+
+(print "factorial(5):")
+(print (factorial 5))
+
+; Use imported variable
+(print "math-pi:")
+(print math-pi)
+
+; Circle area using imported constant and function
+(fn circle-area (r)
+  (* math-pi (square r)))
+
+(print "circle-area(10):")
+(print (circle-area 10))
+
+; Inline module
+(print "Inline module test:")
+(module utils
+  (fn double (x) (* x 2))
+  (fn triple (x) (* x 3)))
+
+(print (double 5))
+(print (triple 5))
+
+(print "=== MODULES TESTS PASSED ===")

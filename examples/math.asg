@@ -1,0 +1,66 @@
+; ASG Math Library Test
+
+(print "=== Math Library ===")
+
+; Constants
+(print "PI:")
+(print (PI))
+(print "E:")
+(print (E))
+
+; Basic functions
+(print "sqrt(16):")
+(print (sqrt 16))
+
+(print "pow(2, 10):")
+(print (pow 2 10))
+
+(print "abs(-42):")
+(print (abs -42))
+
+; Trigonometry
+(print "sin(0):")
+(print (sin 0))
+
+(print "cos(0):")
+(print (cos 0))
+
+; Logarithms  
+(print "ln(E):")
+(print (ln (E)))
+
+(print "log10(100):")
+(print (log10 100))
+
+; Rounding
+(print "floor(3.7):")
+(print (floor 3.7))
+
+(print "ceil(3.2):")
+(print (ceil 3.2))
+
+(print "round(3.5):")
+(print (round 3.5))
+
+; Min/Max
+(print "min(10, 5):")
+(print (min 10 5))
+
+(print "max(10, 5):")
+(print (max 10 5))
+
+; Distance formula
+(fn distance (x1 y1 x2 y2)
+  (sqrt (+ (pow (- x2 x1) 2) (pow (- y2 y1) 2))))
+
+(print "distance(0,0,3,4):")
+(print (distance 0 0 3 4))
+
+; Circle area
+(fn circle-area (r)
+  (* (PI) (* r r)))
+
+(print "circle-area(10):")
+(print (circle-area 10))
+
+(print "=== MATH TESTS PASSED ===")

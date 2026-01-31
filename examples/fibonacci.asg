@@ -1,0 +1,66 @@
+; ============================================
+; FIBONACCI SEQUENCES
+; Multiple ways to compute Fibonacci numbers
+;
+; Run: cargo run -- examples/fibonacci.asg
+; ============================================
+
+(print "=== Fibonacci in ASG ===")
+(print "")
+
+; 1. Recursive (classic, but slow for large n)
+(fn fib-rec (n)
+  (if (<= n 1)
+    n
+    (+ (fib-rec (- n 1)) (fib-rec (- n 2)))))
+
+(print "1. Recursive Fibonacci (0-10):")
+(print (array
+  (fib-rec 0) (fib-rec 1) (fib-rec 2) (fib-rec 3) (fib-rec 4)
+  (fib-rec 5) (fib-rec 6) (fib-rec 7) (fib-rec 8) (fib-rec 9) (fib-rec 10)))
+(print "")
+
+; 2. Iterative (fast)
+(fn fib-iter (n)
+  (do
+    (let a 0)
+    (let b 1)
+    (let i 0)
+    (while (< i n)
+      (do
+        (let temp b)
+        (set b (+ a b))
+        (set a temp)
+        (set i (+ i 1))))
+    a))
+
+(print "2. Iterative Fibonacci (0-15):")
+(print (map (range 0 16) fib-iter))
+(print "")
+
+; 3. Using map
+(print "3. Using map (0-10):")
+(print (map (range 0 11) fib-iter))
+(print "")
+
+; 4. Larger numbers
+(print "4. Larger Fibonacci numbers:")
+(print (concat "fib(20) = " (str (fib-iter 20))))
+(print (concat "fib(30) = " (str (fib-iter 30))))
+(print (concat "fib(40) = " (str (fib-iter 40))))
+(print "")
+
+; 5. Fibonacci sum
+(print "5. Sum of first 10 Fibonacci numbers:")
+(let fib-sum (reduce (map (range 0 10) fib-iter) 0 (lambda (a b) (+ a b))))
+(print fib-sum)
+(print "")
+
+; 6. Golden ratio approximation
+(print "6. Golden ratio approximation (fib(n)/fib(n-1)):")
+(let n 20)
+(let ratio (/ (fib-iter n) (fib-iter (- n 1))))
+(print (concat "fib(20)/fib(19) = " (str ratio)))
+(print "")
+
+(print "=== Done ===")

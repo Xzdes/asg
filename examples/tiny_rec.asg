@@ -1,0 +1,8 @@
+; Tiny recursion test
+(fn fact (n)
+  (if (<= n 1) 1 (* n (fact (- n 1)))))
+
+(print (fact 3))
+(print "done3")
+(print (fact 4))
+(print "done4")

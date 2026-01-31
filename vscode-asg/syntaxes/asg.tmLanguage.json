@@ -1,0 +1,173 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ASG",
+  "scopeName": "source.asg",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#constants" },
+    { "include": "#keywords" },
+    { "include": "#operators" },
+    { "include": "#functions" },
+    { "include": "#variables" },
+    { "include": "#parens" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.semicolon.asg",
+          "match": ";.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.asg",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.asg",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.asg",
+          "match": "\\b[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.asg",
+          "match": "\\b[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.hex.asg",
+          "match": "\\b0x[0-9a-fA-F]+\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.true.asg",
+          "match": "\\b(true)\\b"
+        },
+        {
+          "name": "constant.language.boolean.false.asg",
+          "match": "\\b(false)\\b"
+        },
+        {
+          "name": "constant.language.nil.asg",
+          "match": "\\b(nil)\\b"
+        },
+        {
+          "name": "constant.language.math.asg",
+          "match": "\\b(PI|E|TAU|PHI)\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.asg",
+          "match": "(?<=\\()\\s*(if|do|loop|for|while|match|try|catch|throw|break|continue|return)\\b"
+        },
+        {
+          "name": "keyword.other.definition.asg",
+          "match": "(?<=\\()\\s*(fn|lambda|let|set|const|def)\\b"
+        },
+        {
+          "name": "keyword.other.module.asg",
+          "match": "(?<=\\()\\s*(module|import|export|require)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arithmetic.asg",
+          "match": "(?<=\\()\\s*([+\\-*/%]|\\+\\+|\\-\\-)(?=\\s)"
+        },
+        {
+          "name": "keyword.operator.comparison.asg",
+          "match": "(?<=\\()\\s*(=|!=|<|>|<=|>=|==)(?=\\s)"
+        },
+        {
+          "name": "keyword.operator.logical.asg",
+          "match": "(?<=\\()\\s*(and|or|not)\\b"
+        },
+        {
+          "name": "keyword.operator.pipe.asg",
+          "match": "(?<=\\()\\s*(\\|>|compose)\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.io.asg",
+          "match": "(?<=\\()\\s*(print|input|input-int|input-float|read-file|write-file|append-file)\\b"
+        },
+        {
+          "name": "support.function.builtin.math.asg",
+          "match": "(?<=\\()\\s*(sqrt|sin|cos|tan|asin|acos|atan|exp|ln|log10|pow|abs|floor|ceil|round|min|max)\\b"
+        },
+        {
+          "name": "support.function.builtin.array.asg",
+          "match": "(?<=\\()\\s*(array|get|length|map|filter|reduce|range|append|concat|reverse|sort|take|drop|first|last|nth)\\b"
+        },
+        {
+          "name": "support.function.builtin.string.asg",
+          "match": "(?<=\\()\\s*(str-length|str-concat|str-split|str-join|str-trim|str-upper|str-lower|str-contains|str-replace|substring|to-string)\\b"
+        },
+        {
+          "name": "support.function.builtin.dict.asg",
+          "match": "(?<=\\()\\s*(dict|dict-get|dict-set|dict-has|dict-remove|dict-keys|dict-values|dict-merge)\\b"
+        },
+        {
+          "name": "support.function.builtin.type.asg",
+          "match": "(?<=\\()\\s*(type-of|int\\?|float\\?|string\\?|bool\\?|array\\?|dict\\?|fn\\?)\\b"
+        },
+        {
+          "name": "entity.name.function.asg",
+          "match": "(?<=\\()\\s*([a-zA-Z_][a-zA-Z0-9_\\-\\?\\!]*)(?=\\s)"
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.parameter.asg",
+          "match": "\\b[a-zA-Z_][a-zA-Z0-9_\\-\\?\\!]*\\b"
+        }
+      ]
+    },
+    "parens": {
+      "patterns": [
+        {
+          "name": "punctuation.paren.open.asg",
+          "match": "\\("
+        },
+        {
+          "name": "punctuation.paren.close.asg",
+          "match": "\\)"
+        },
+        {
+          "name": "punctuation.bracket.open.asg",
+          "match": "\\["
+        },
+        {
+          "name": "punctuation.bracket.close.asg",
+          "match": "\\]"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,191 @@
+{
+  "Function Definition": {
+    "prefix": ["fn", "defn", "function"],
+    "body": [
+      "(fn ${1:name} (${2:args})",
+      "  ${3:body})"
+    ],
+    "description": "Define a function"
+  },
+  "Lambda Expression": {
+    "prefix": ["lambda", "lam", "->"],
+    "body": "(lambda (${1:x}) ${2:body})",
+    "description": "Anonymous function"
+  },
+  "Let Binding": {
+    "prefix": ["let", "def"],
+    "body": "(let ${1:name} ${2:value})",
+    "description": "Variable binding"
+  },
+  "If Expression": {
+    "prefix": ["if", "cond"],
+    "body": [
+      "(if ${1:condition}",
+      "    ${2:then}",
+      "    ${3:else})"
+    ],
+    "description": "Conditional expression"
+  },
+  "If Without Else": {
+    "prefix": "when",
+    "body": "(if ${1:condition} ${2:then})",
+    "description": "Conditional without else"
+  },
+  "Do Block": {
+    "prefix": ["do", "begin", "block"],
+    "body": [
+      "(do",
+      "  ${1:expr1}",
+      "  ${2:expr2})"
+    ],
+    "description": "Block of expressions"
+  },
+  "For Loop": {
+    "prefix": "for",
+    "body": [
+      "(for ${1:i} ${2:iterable}",
+      "  ${3:body})"
+    ],
+    "description": "For loop"
+  },
+  "Loop": {
+    "prefix": ["loop", "while"],
+    "body": [
+      "(loop ${1:condition}",
+      "  ${2:body})"
+    ],
+    "description": "Loop with condition"
+  },
+  "Match Expression": {
+    "prefix": "match",
+    "body": [
+      "(match ${1:value}",
+      "  (${2:pattern1} ${3:result1})",
+      "  (${4:pattern2} ${5:result2}))"
+    ],
+    "description": "Pattern matching"
+  },
+  "Try-Catch": {
+    "prefix": ["try", "trycatch"],
+    "body": [
+      "(try",
+      "  ${1:body}",
+      "  (catch ${2:e} ${3:handler}))"
+    ],
+    "description": "Error handling"
+  },
+  "Map": {
+    "prefix": "map",
+    "body": "(map ${1:array} (lambda (${2:x}) ${3:body}))",
+    "description": "Map over array"
+  },
+  "Filter": {
+    "prefix": "filter",
+    "body": "(filter ${1:array} (lambda (${2:x}) ${3:predicate}))",
+    "description": "Filter array"
+  },
+  "Reduce": {
+    "prefix": ["reduce", "fold"],
+    "body": "(reduce ${1:array} ${2:init} (lambda (${3:acc} ${4:x}) ${5:body}))",
+    "description": "Reduce array"
+  },
+  "Pipe": {
+    "prefix": ["pipe", "|>"],
+    "body": [
+      "(|> ${1:value}",
+      "    ${2:fn1}",
+      "    ${3:fn2})"
+    ],
+    "description": "Pipe operator"
+  },
+  "Range": {
+    "prefix": "range",
+    "body": "(range ${1:start} ${2:end})",
+    "description": "Create range"
+  },
+  "Print": {
+    "prefix": ["print", "log"],
+    "body": "(print ${1:value})",
+    "description": "Print value"
+  },
+  "Module Definition": {
+    "prefix": "module",
+    "body": [
+      "(module ${1:name}",
+      "  (export ${2:exports})",
+      "  ",
+      "  ${3:definitions})"
+    ],
+    "description": "Define a module"
+  },
+  "Import": {
+    "prefix": "import",
+    "body": "(import \"${1:module}\")",
+    "description": "Import module"
+  },
+  "Import As": {
+    "prefix": "importas",
+    "body": "(import \"${1:module}\" :as ${2:alias})",
+    "description": "Import module with alias"
+  },
+  "Export": {
+    "prefix": "export",
+    "body": "(export ${1:name1} ${2:name2})",
+    "description": "Export definitions"
+  },
+  "Dict": {
+    "prefix": "dict",
+    "body": "(dict ${1:key1} ${2:val1} ${3:key2} ${4:val2})",
+    "description": "Create dictionary"
+  },
+  "Array": {
+    "prefix": "array",
+    "body": "(array ${1:elem1} ${2:elem2} ${3:elem3})",
+    "description": "Create array"
+  },
+  "List Comprehension": {
+    "prefix": ["listcomp", "lc"],
+    "body": "(list-comp ${1:expr} ${2:var} ${3:iterable} ${4:condition})",
+    "description": "List comprehension"
+  },
+  "Recursive Function": {
+    "prefix": "recfn",
+    "body": [
+      "(fn ${1:name} (${2:n})",
+      "  (if ${3:base-case}",
+      "      ${4:base-result}",
+      "      ${5:(${1:name} (${6:recursive-call})}))"
+    ],
+    "description": "Recursive function template"
+  },
+  "Factorial": {
+    "prefix": "factorial",
+    "body": [
+      "(fn factorial (n)",
+      "  (if (<= n 1)",
+      "      1",
+      "      (* n (factorial (- n 1)))))"
+    ],
+    "description": "Factorial function"
+  },
+  "Fibonacci": {
+    "prefix": "fibonacci",
+    "body": [
+      "(fn fib (n)",
+      "  (if (<= n 1)",
+      "      n",
+      "      (+ (fib (- n 1)) (fib (- n 2)))))"
+    ],
+    "description": "Fibonacci function"
+  },
+  "HTTP Handler": {
+    "prefix": "httphandler",
+    "body": [
+      "(fn handler (req)",
+      "  (http-response 200",
+      "    (dict \"Content-Type\" \"text/html\")",
+      "    ${1:body}))"
+    ],
+    "description": "HTTP handler function"
+  }
+}

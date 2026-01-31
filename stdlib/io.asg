@@ -1,0 +1,110 @@
+; ASG IO Module
+; Функции ввода/вывода.
+
+(module io
+
+  ; === Вывод ===
+
+  ; Печать с новой строкой
+  ; (fn print (x) - встроенная)
+
+  ; Печать без новой строки (имитация)
+  (fn print-inline (x)
+    (print x))
+
+  ; Печать нескольких значений
+  (fn print-all (&values)
+    (for v values
+      (print v)))
+
+  ; Печать с разделителем
+  (fn print-sep (sep &values)
+    (print (str-join (map values to-string) sep)))
+
+  ; Отладочный вывод
+  (fn debug (label x)
+    (print (str-concat label ": " (to-string x)))
+    x)
+
+  ; Assert с сообщением
+  (fn assert (condition message)
+    (if (not condition)
+      (do
+        (print (str-concat "Assertion failed: " message))
+        (throw message))
+      true))
+
+  ; === Ввод ===
+
+  ; Чтение строки
+  ; (fn input () - встроенная)
+  ; (fn input (prompt) - встроенная)
+
+  ; Чтение числа
+  ; (fn input-int () - встроенная)
+  ; (fn input-float () - встроенная)
+
+  ; Чтение с валидацией
+  (fn input-validated (prompt validator)
+    (let value (input prompt))
+    (if (validator value) value
+      (do
+        (print "Invalid input, try again.")
+        (input-validated prompt validator))))
+
+  ; Чтение да/нет
+  (fn input-yes-no (prompt)
+    (let answer (str-lower (input (str-concat prompt " (y/n): "))))
+    (if (or (= answer "y") (= answer "yes")) true
+      (if (or (= answer "n") (= answer "no")) false
+        (do
+          (print "Please enter y or n.")
+          (input-yes-no prompt)))))
+
+  ; Чтение числа в диапазоне
+  (fn input-int-range (prompt min-val max-val)
+    (let n (input-int prompt))
+    (if (and (>= n min-val) (<= n max-val)) n
+      (do
+        (print (str-concat "Please enter a number between "
+                           (to-string min-val) " and " (to-string max-val)))
+        (input-int-range prompt min-val max-val))))
+
+  ; === Файлы ===
+  ; read-file, write-file, append-file, file-exists - встроенные
+
+  ; Читать строки из файла
+  (fn read-lines (path)
+    (str-split (read-file path) "\n"))
+
+  ; Записать строки в файл
+  (fn write-lines (path lines)
+    (write-file path (str-join lines "\n")))
+
+  ; Добавить строку в файл
+  (fn append-line (path line)
+    (append-file path (str-concat line "\n")))
+
+  ; === Форматирование ===
+
+  ; Простой sprintf (только %s)
+  (fn format (template &args)
+    (format-helper template args 0))
+
+  (fn format-helper (template args idx)
+    (if (>= idx (length args)) template
+      (format-helper
+        (str-replace template "%s" (to-string (get args idx)))
+        args
+        (+ idx 1))))
+
+  ; Printf (печать с форматированием)
+  (fn printf (template &args)
+    (print (apply format template args)))
+
+  ; === Экспорты ===
+  (export
+    print-inline print-all print-sep debug assert
+    input-validated input-yes-no input-int-range
+    read-lines write-lines append-line
+    format printf))

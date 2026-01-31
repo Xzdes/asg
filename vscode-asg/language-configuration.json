@@ -1,0 +1,47 @@
+{
+  "comments": {
+    "lineComment": ";"
+  },
+  "brackets": [
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"]
+  ],
+  "autoClosingPairs": [
+    { "open": "(", "close": ")" },
+    { "open": "[", "close": "]" },
+    { "open": "{", "close": "}" },
+    { "open": "\"", "close": "\"", "notIn": ["string"] }
+  ],
+  "surroundingPairs": [
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"],
+    ["\"", "\""]
+  ],
+  "colorizedBracketPairs": [
+    ["(", ")"],
+    ["[", "]"]
+  ],
+  "folding": {
+    "markers": {
+      "start": "^\\s*\\((?:fn|module|match|if|do|let|loop|for)\\b",
+      "end": "^\\s*\\)"
+    }
+  },
+  "indentationRules": {
+    "increaseIndentPattern": "^\\s*\\([^)]*$",
+    "decreaseIndentPattern": "^\\s*\\)\\s*$"
+  },
+  "wordPattern": "[\\w\\-\\+\\*\\/\\=\\<\\>\\!\\?\\%\\&\\|\\^\\~\\.]+",
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*\\([^)]*$",
+      "action": { "indent": "indent" }
+    },
+    {
+      "beforeText": "^\\s*\\)\\s*$",
+      "action": { "indent": "outdent" }
+    }
+  ]
+}

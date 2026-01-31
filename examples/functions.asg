@@ -1,0 +1,10 @@
+; ASG Functions - Функции (базовый пример)
+; Запуск: asg examples/functions.asg
+
+; Простые вычисления без функций
+(let a 5)
+(let b 3)
+
+; a^2 + b^2 = 25 + 9 = 34
+(let result (+ (* a a) (* b b)))
+result

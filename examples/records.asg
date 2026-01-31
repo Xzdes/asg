@@ -1,0 +1,11 @@
+; ASG Records - Записи (структуры)
+; Запуск: asg examples/records.asg
+
+; Демонстрация вложенных вычислений
+(let a 3)
+(let b 4)
+
+; Вычисление квадрата гипотенузы: a^2 + b^2
+(let hyp_squared (+ (* a a) (* b b)))
+
+hyp_squared  ; 3^2 + 4^2 = 9 + 16 = 25

@@ -1,0 +1,159 @@
+; =====================================================
+; ASG Tutorial: Simple HTTP Server
+; =====================================================
+;
+; This example demonstrates building a basic HTTP server
+; that handles routing and returns different response types.
+;
+; To run with web features:
+;   cargo build --features web
+;   cargo run --bin asg -- tutorial/01-web-server.asg
+;
+; =====================================================
+
+; === Imports ===
+; (import "std/io")
+
+; === Configuration ===
+(let SERVER_PORT 8080)
+(let SERVER_HOST "localhost")
+
+; === Response Helpers ===
+
+; Create an HTML response
+(fn html-response (title content)
+  (let html (concat
+    "<!DOCTYPE html>\n"
+    "<html lang='en'>\n"
+    "<head>\n"
+    "  <meta charset='UTF-8'>\n"
+    "  <title>" title "</title>\n"
+    "  <style>\n"
+    "    body { font-family: sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }\n"
+    "    h1 { color: #333; }\n"
+    "    .info { background: #f0f0f0; padding: 15px; border-radius: 5px; }\n"
+    "  </style>\n"
+    "</head>\n"
+    "<body>\n"
+    "  <h1>" title "</h1>\n"
+    "  <div class='info'>" content "</div>\n"
+    "</body>\n"
+    "</html>"))
+  (dict
+    "status" 200
+    "content-type" "text/html"
+    "body" html))
+
+; Create a JSON response
+(fn json-response (data)
+  (dict
+    "status" 200
+    "content-type" "application/json"
+    "body" (json-encode data)))
+
+; Create a 404 Not Found response
+(fn not-found ()
+  (dict
+    "status" 404
+    "content-type" "text/plain"
+    "body" "404 Not Found"))
+
+; Create a 500 Error response
+(fn server-error (message)
+  (dict
+    "status" 500
+    "content-type" "text/plain"
+    "body" (concat "500 Internal Server Error: " message)))
+
+; === Route Handlers ===
+
+; Home page handler
+(fn handle-home ()
+  (html-response
+    "Welcome to ASG"
+    "<p>This is a simple HTTP server written in ASG.</p>
+     <h2>Available endpoints:</h2>
+     <ul>
+       <li><a href='/api/hello'>GET /api/hello</a> - Hello message</li>
+       <li><a href='/api/time'>GET /api/time</a> - Current timestamp</li>
+       <li><a href='/api/calc?a=10&b=5'>GET /api/calc</a> - Calculator</li>
+       <li><a href='/api/echo'>POST /api/echo</a> - Echo body</li>
+     </ul>"))
+
+; Hello API handler
+(fn handle-hello ()
+  (json-response (dict
+    "message" "Hello from ASG!"
+    "version" "1.0.0")))
+
+; Time API handler
+(fn handle-time ()
+  ; In real implementation, would use system time
+  (json-response (dict
+    "timestamp" 1706745600
+    "formatted" "2024-02-01T00:00:00Z"
+    "timezone" "UTC")))
+
+; Calculator API handler
+(fn handle-calc (params)
+  (let a (dict-get params "a" 0))
+  (let b (dict-get params "b" 0))
+  (json-response (dict
+    "a" a
+    "b" b
+    "sum" (+ a b)
+    "difference" (- a b)
+    "product" (* a b)
+    "quotient" (if (= b 0) "undefined" (/ a b)))))
+
+; Echo handler (for POST requests)
+(fn handle-echo (body)
+  (json-response (dict
+    "received" body
+    "length" (str-length body))))
+
+; === Router ===
+
+; Main request router
+(fn router (method path params body)
+  (match (array method path)
+    ; GET routes
+    ((array "GET" "/") (handle-home))
+    ((array "GET" "/api/hello") (handle-hello))
+    ((array "GET" "/api/time") (handle-time))
+    ((array "GET" "/api/calc") (handle-calc params))
+
+    ; POST routes
+    ((array "POST" "/api/echo") (handle-echo body))
+
+    ; Fallback
+    (_ (not-found))))
+
+; === Server Simulation ===
+
+; Simulate handling a request
+(fn simulate-request (method path)
+  (print (concat "=> " method " " path))
+  (let response (router method path (dict) ""))
+  (print (concat "   Status: " (str (dict-get response "status"))))
+  (print (concat "   Type: " (dict-get response "content-type")))
+  (print ""))
+
+; === Demo ===
+
+(print "=== ASG HTTP Server Demo ===")
+(print "")
+
+; Simulate some requests
+(simulate-request "GET" "/")
+(simulate-request "GET" "/api/hello")
+(simulate-request "GET" "/api/time")
+(simulate-request "GET" "/api/unknown")
+
+; Show JSON response
+(print "JSON Response example:")
+(print (json-encode (dict-get (handle-hello) "body")))
+(print "")
+
+(print "=== Server would start on http://localhost:8080 ===")
+(print "In production, uncomment: (start-server SERVER_PORT router)")

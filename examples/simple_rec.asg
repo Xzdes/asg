@@ -1,0 +1,11 @@
+; Simple recursion test
+(print "Start")
+
+(fn count-down (n)
+  (if (<= n 0)
+    0
+    (+ 1 (count-down (- n 1)))))
+
+(print "Test count-down(5):")
+(print (count-down 5))
+(print "Done")

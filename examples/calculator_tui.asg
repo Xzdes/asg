@@ -1,0 +1,52 @@
+; ============================================
+; TUI CALCULATOR
+; Interactive terminal calculator
+; ============================================
+
+(clear-screen)
+(print "")
+(print "  ╔════════════════════════════════════╗")
+(print "  ║     SYNAPSE TUI CALCULATOR         ║")
+(print "  ╠════════════════════════════════════╣")
+(print "  ║  Operations: + - * / // % pow sqrt ║")
+(print "  ║  Type 'quit' to exit               ║")
+(print "  ╚════════════════════════════════════╝")
+(print "")
+
+; Main calculator loop
+(let running true)
+
+(while running
+  (do
+    (let op (input "  Operation: "))
+
+    (if (== op "quit")
+      (set running false)
+      (if (== op "sqrt")
+        ; Single operand operation
+        (do
+          (let a (input-float "  Number: "))
+          (print (concat "  Result: " (to-string (sqrt a))))
+          (print ""))
+        ; Two operand operations
+        (do
+          (let a (input-float "  First number: "))
+          (let b (input-float "  Second number: "))
+
+          (let result
+            (if (== op "+") (+ a b)
+            (if (== op "-") (- a b)
+            (if (== op "*") (* a b)
+            (if (== op "/") (/ a b)
+            (if (== op "//") (// a b)
+            (if (== op "%") (% a b)
+            (if (== op "pow") (pow a b)
+            0.0))))))))
+
+          (if (== result 0.0)
+            (if (not (== op "")) (print "  Unknown operation!") ())
+            (print (concat "  Result: " (to-string result))))
+          (print ""))))))
+
+(print "")
+(print "  Goodbye!")

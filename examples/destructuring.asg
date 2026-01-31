@@ -1,0 +1,57 @@
+; ASG Destructuring Test
+
+(print "=== Destructuring ===")
+
+; Array destructuring
+(print "Array destructuring:")
+(let (a b c) (array 1 2 3))
+(print a)
+(print b)
+(print c)
+
+; More array destructuring
+(print "Array [x y z]:")
+(let (x y z) (array 10 20 30))
+(print (+ (+ x y) z))
+
+; Partial destructuring (fewer vars than elements)
+(print "Partial destructuring:")
+(let (first second) (array 100 200 300 400))
+(print first)   ; 100
+(print second)  ; 200
+
+; Destructuring with rest (extra vars get Unit)
+(print "Extra vars get ():")
+(let (p q r s) (array 5 6))
+(print p)  ; 5
+(print q)  ; 6
+(print r)  ; ()
+(print s)  ; ()
+
+; Dict destructuring
+(print "Dict destructuring:")
+(let person (dict "name" "Alice" "age" 30 "city" "Moscow"))
+(let (name age) person)
+(print name)  ; Alice
+(print age)   ; 30
+
+; Use destructured values
+(print "Using destructured values:")
+(let (width height) (array 800 600))
+(print (* width height))  ; 480000
+
+; Nested usage with functions
+(print "Destructure function result:")
+(fn get-point () (array 3 4))
+(let (px py) (get-point))
+(print px)  ; 3
+(print py)  ; 4
+
+; Swap values using destructuring
+(print "Swap values:")
+(let (m n) (array 1 2))
+(print m) (print n)  ; 1 2
+(let (m n) (array n m))
+(print m) (print n)  ; 2 1
+
+(print "=== DESTRUCTURING TESTS PASSED ===")

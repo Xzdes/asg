@@ -1,0 +1,95 @@
+; ============================================
+; SYNAPSE WEB SERVER EXAMPLE
+; A simple web server with routing
+;
+; Run: cargo run --features web -- examples/webserver.asg
+; Then open: http://localhost:8080
+; ============================================
+
+(print "Starting ASG Web Server...")
+
+; Define routes
+(fn handle-home (req)
+  (html
+    (head
+      (title "ASG Web Server")
+      (style "
+        body { font-family: sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #1a1a2e; color: white; }
+        h1 { color: #e94560; }
+        a { color: #0f3460; background: #e94560; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px; display: inline-block; }
+        a:hover { background: #ff6b6b; }
+        code { background: #16213e; padding: 2px 8px; border-radius: 3px; }
+        .routes { background: #16213e; padding: 20px; border-radius: 10px; margin: 20px 0; }
+      "))
+    (body
+      (h1 "Welcome to ASG Web Server!")
+      (p "This server is running on " (code "ASG v0.7.0"))
+      (div "@class=routes"
+        (h3 "Available Routes:")
+        (a "@href=/" "Home")
+        (a "@href=/about" "About")
+        (a "@href=/api/hello" "API Hello")
+        (a "@href=/api/calc?a=5&b=3" "API Calc")
+        (a "@href=/api/time" "API Time"))
+      (p "Try: " (code "curl http://localhost:8080/api/hello")))))
+
+(fn handle-about (req)
+  (html
+    (head (title "About"))
+    (body
+      (h1 "About ASG")
+      (p "ASG is an AI-friendly programming language with S-Expression syntax.")
+      (p (a "@href=/" "Back to Home")))))
+
+(fn handle-api-hello (req)
+  (json-encode (dict "message" "Hello from ASG!" "status" "ok")))
+
+(fn handle-api-calc (req)
+  (do
+    (let params (dict-get req "params"))
+    (let a-str (dict-get params "a"))
+    (let b-str (dict-get params "b"))
+    (let a (if a-str (parse-int a-str) 0))
+    (let b (if b-str (parse-int b-str) 0))
+    (json-encode (dict
+      "a" a
+      "b" b
+      "sum" (+ a b)
+      "product" (* a b)
+      "difference" (- a b)))))
+
+(fn handle-api-time (req)
+  (json-encode (dict "timestamp" "2025-01-30" "server" "ASG")))
+
+(fn handle-404 (req)
+  (dict
+    "status" 404
+    "content-type" "text/html"
+    "body" (html
+      (head (title "404 Not Found"))
+      (body
+        (h1 "404 - Page Not Found")
+        (p "The requested path was not found.")
+        (p (a "@href=/" "Go Home"))))))
+
+; Main router
+(fn router (req)
+  (do
+    (let path (dict-get req "path"))
+    ; Remove query string for routing
+    (let clean-path (first (str-split path "?")))
+
+    (if (== clean-path "/")
+      (handle-home req)
+    (if (== clean-path "/about")
+      (handle-about req)
+    (if (== clean-path "/api/hello")
+      (handle-api-hello req)
+    (if (== clean-path "/api/calc")
+      (handle-api-calc req)
+    (if (== clean-path "/api/time")
+      (handle-api-time req)
+      (handle-404 req))))))))
+
+; Start server
+(http-serve 8080 router)

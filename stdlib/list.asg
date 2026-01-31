@@ -1,0 +1,202 @@
+; ASG List Module
+; Функции для работы со списками/массивами.
+
+(module list
+
+  ; === Базовые операции ===
+
+  ; Голова списка (первый элемент)
+  (fn head (arr)
+    (get arr 0))
+
+  ; Хвост списка (все кроме первого)
+  (fn tail (arr)
+    (drop arr 1))
+
+  ; Последний элемент
+  (fn last (arr)
+    (get arr (- (length arr) 1)))
+
+  ; Все кроме последнего
+  (fn init (arr)
+    (take arr (- (length arr) 1)))
+
+  ; Пустой ли список
+  (fn empty? (arr)
+    (= (length arr) 0))
+
+  ; Один элемент
+  (fn singleton (x)
+    (array x))
+
+  ; === Трансформации ===
+
+  ; Развернуть список
+  ; (fn reverse (arr) - встроенная)
+
+  ; Плоский map
+  (fn flat-map (arr f)
+    (reduce (map arr f) (array) concat))
+
+  ; Flatten (выровнять вложенные массивы)
+  (fn flatten (arr)
+    (flat-map arr (lambda (x)
+      (if (array? x) (flatten x) (singleton x)))))
+
+  ; Zip два массива в массив пар
+  (fn zip (arr1 arr2)
+    (let len (min (length arr1) (length arr2)))
+    (map (range 0 len)
+         (lambda (i) (array (get arr1 i) (get arr2 i)))))
+
+  ; Zip с функцией
+  (fn zip-with (f arr1 arr2)
+    (let len (min (length arr1) (length arr2)))
+    (map (range 0 len)
+         (lambda (i) (f (get arr1 i) (get arr2 i)))))
+
+  ; Unzip массив пар в два массива
+  (fn unzip (pairs)
+    (array
+      (map pairs (lambda (p) (get p 0)))
+      (map pairs (lambda (p) (get p 1)))))
+
+  ; Чередование двух массивов
+  (fn interleave (arr1 arr2)
+    (flatten (zip arr1 arr2)))
+
+  ; === Поиск ===
+
+  ; Найти индекс элемента
+  ; (fn index-of (arr elem) - встроенная)
+
+  ; Найти индекс по предикату
+  (fn find-index (arr pred)
+    (find-index-helper arr pred 0))
+
+  (fn find-index-helper (arr pred i)
+    (if (>= i (length arr)) -1
+      (if (pred (get arr i)) i
+        (find-index-helper arr pred (+ i 1)))))
+
+  ; Найти элемент по предикату
+  (fn find (arr pred)
+    (let idx (find-index arr pred))
+    (if (= idx -1) nil (get arr idx)))
+
+  ; Все ли элементы удовлетворяют предикату
+  (fn all? (arr pred)
+    (reduce arr true
+      (lambda (acc x) (and acc (pred x)))))
+
+  ; Хотя бы один элемент удовлетворяет предикату
+  (fn any? (arr pred)
+    (reduce arr false
+      (lambda (acc x) (or acc (pred x)))))
+
+  ; Ни один элемент не удовлетворяет предикату
+  (fn none? (arr pred)
+    (not (any? arr pred)))
+
+  ; === Агрегация ===
+
+  ; Минимальный элемент
+  (fn minimum (arr)
+    (reduce (tail arr) (head arr) min))
+
+  ; Максимальный элемент
+  (fn maximum (arr)
+    (reduce (tail arr) (head arr) max))
+
+  ; Среднее значение
+  (fn average (arr)
+    (/ (sum arr) (length arr)))
+
+  ; Медиана
+  (fn median (arr)
+    (let sorted (sort arr))
+    (let len (length sorted))
+    (let mid (/ len 2))
+    (if (= (% len 2) 0)
+      (/ (+ (get sorted (- mid 1)) (get sorted mid)) 2)
+      (get sorted mid)))
+
+  ; === Группировка ===
+
+  ; Разбить на группы по n элементов
+  (fn chunk (arr n)
+    (if (empty? arr) (array)
+      (append
+        (singleton (take arr n))
+        (chunk (drop arr n) n))))
+
+  ; Уникальные элементы
+  (fn unique (arr)
+    (reduce arr (array)
+      (lambda (acc x)
+        (if (contains acc x) acc (append acc x)))))
+
+  ; Частоты элементов
+  (fn frequencies (arr)
+    (reduce arr (dict)
+      (lambda (d x)
+        (dict-set d x (+ 1 (or-else (dict-get d x) 0))))))
+
+  ; Группировка по функции
+  (fn group-by (arr key-fn)
+    (reduce arr (dict)
+      (lambda (d x)
+        (let k (key-fn x))
+        (let existing (or-else (dict-get d k) (array)))
+        (dict-set d k (append existing x)))))
+
+  ; === Сортировка ===
+
+  ; Сортировка по ключу
+  (fn sort-by (arr key-fn)
+    (let pairs (map arr (lambda (x) (array (key-fn x) x))))
+    (let sorted (sort pairs))
+    (map sorted (lambda (p) (get p 1))))
+
+  ; Обратная сортировка
+  (fn sort-desc (arr)
+    (reverse (sort arr)))
+
+  ; === Разные утилиты ===
+
+  ; Повторить элемент n раз
+  (fn repeat-elem (x n)
+    (map (range 0 n) (lambda (_) x)))
+
+  ; Создать массив из range с шагом
+  (fn range-step (start end step)
+    (if (>= start end) (array)
+      (append (singleton start)
+              (range-step (+ start step) end step))))
+
+  ; Enumeration (с индексами)
+  (fn enumerate (arr)
+    (zip (range 0 (length arr)) arr))
+
+  ; Partition (разбить по предикату)
+  (fn partition (arr pred)
+    (array
+      (filter arr pred)
+      (filter arr (lambda (x) (not (pred x))))))
+
+  ; Scan (накопление с промежуточными результатами)
+  (fn scan (arr init f)
+    (if (empty? arr) (singleton init)
+      (let next (f init (head arr)))
+      (append (singleton init)
+              (scan (tail arr) next f))))
+
+  ; === Экспорты ===
+  (export
+    head tail last init empty? singleton
+    flat-map flatten zip zip-with unzip interleave
+    find-index find all? any? none?
+    minimum maximum average median
+    chunk unique frequencies group-by
+    sort-by sort-desc
+    repeat-elem range-step enumerate partition scan))

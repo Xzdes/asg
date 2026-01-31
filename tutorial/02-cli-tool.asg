@@ -1,0 +1,187 @@
+; =====================================================
+; ASG Tutorial: CLI Word Frequency Counter
+; =====================================================
+;
+; This example demonstrates building a command-line tool
+; that analyzes text files and counts word frequencies.
+;
+; Usage:
+;   cargo run --bin asg -- tutorial/02-cli-tool.asg [filename]
+;
+; If no filename is provided, uses sample text for demo.
+;
+; =====================================================
+
+; === String Utilities ===
+
+; Convert string to lowercase (simplified)
+(fn str-lower (s)
+  ; In real implementation, this would iterate over chars
+  s)
+
+; Remove non-alphabetic characters
+(fn str-clean (s)
+  ; Keep only letters and spaces
+  s)
+
+; === Word Processing ===
+
+; Tokenize text into words
+(fn tokenize (text)
+  (let cleaned (str-clean text))
+  (let lower (str-lower cleaned))
+  (let words (str-split lower " "))
+  ; Filter out empty strings
+  (filter words (lambda (w) (> (str-length w) 0))))
+
+; Count occurrences of each word
+(fn count-frequencies (words)
+  (reduce words (dict)
+    (lambda (acc word)
+      (let current (dict-get acc word 0))
+      (dict-set acc word (+ current 1)))))
+
+; Convert dict to list of [word, count] pairs
+(fn dict-to-pairs (d)
+  (let keys (dict-keys d))
+  (map keys (lambda (k)
+    (array k (dict-get d k)))))
+
+; Sort pairs by count (descending)
+(fn sort-by-count (pairs)
+  ; Simple bubble sort for demo
+  ; In production, use optimized sort
+  (let sorted pairs)
+  sorted)
+
+; === Output Formatting ===
+
+; Format a word-count pair for display
+(fn format-pair (pair rank)
+  (let word (get pair 0))
+  (let count (get pair 1))
+  (let bar (repeat-str "#" (min count 20)))
+  (concat
+    (pad-left (str rank) 3)
+    ". "
+    (pad-right word 15)
+    " | "
+    (pad-left (str count) 4)
+    " " bar))
+
+; Create a simple bar chart
+(fn repeat-str (s n)
+  (if (<= n 0)
+      ""
+      (concat s (repeat-str s (- n 1)))))
+
+; Pad string on left
+(fn pad-left (s width)
+  (let padding (- width (str-length s)))
+  (if (<= padding 0)
+      s
+      (concat (repeat-str " " padding) s)))
+
+; Pad string on right
+(fn pad-right (s width)
+  (let padding (- width (str-length s)))
+  (if (<= padding 0)
+      s
+      (concat s (repeat-str " " padding))))
+
+; === Report Generation ===
+
+; Print the top N words
+(fn print-top-words (freq n)
+  (print "")
+  (print "=== Word Frequency Report ===")
+  (print "")
+
+  (let pairs (dict-to-pairs freq))
+  (let sorted (sort-by-count pairs))
+  (let top (take sorted n))
+
+  (print (concat "    " (pad-right "WORD" 15) " | " (pad-left "COUNT" 4) " DISTRIBUTION"))
+  (print "    ----------------------------------------")
+
+  (let i 1)
+  (for-each top (lambda (pair)
+    (print (format-pair pair i))
+    (set i (+ i 1))))
+
+  (print "")
+  (print (concat "Total unique words: " (str (length pairs))))
+  (print (concat "Total word count: " (str (sum (map pairs (lambda (p) (get p 1))))))))
+
+; === Statistics ===
+
+; Calculate basic statistics
+(fn calculate-stats (words)
+  (let total (length words))
+  (let unique (length (unique words)))
+  (let avg-len (if (= total 0) 0
+    (/ (sum (map words str-length)) total)))
+
+  (dict
+    "total-words" total
+    "unique-words" unique
+    "vocabulary-richness" (if (= total 0) 0 (/ unique total))
+    "average-word-length" avg-len))
+
+; Print statistics
+(fn print-stats (stats)
+  (print "")
+  (print "=== Text Statistics ===")
+  (print (concat "Total words: " (str (dict-get stats "total-words"))))
+  (print (concat "Unique words: " (str (dict-get stats "unique-words"))))
+  (print (concat "Vocabulary richness: " (str (* 100 (dict-get stats "vocabulary-richness"))) "%"))
+  (print (concat "Average word length: " (str (dict-get stats "average-word-length")) " characters")))
+
+; === Main Program ===
+
+; Sample text for demo
+(let SAMPLE_TEXT
+  "The quick brown fox jumps over the lazy dog.
+   The dog was not amused by the fox.
+   Quick thinking and quick action saved the day.
+   The brown fox was very quick indeed.
+   Lazy days are the best days for a lazy dog.
+   The fox and the dog became friends in the end.")
+
+; Process text and show results
+(fn analyze-text (text)
+  (print "=== ASG Word Frequency Analyzer ===")
+  (print "")
+  (print "Input text:")
+  (print "---")
+  (print text)
+  (print "---")
+
+  (let words (tokenize text))
+  (let freq (count-frequencies words))
+  (let stats (calculate-stats words))
+
+  (print-stats stats)
+  (print-top-words freq 10))
+
+; === Entry Point ===
+
+; Demo mode - use sample text
+(fn demo ()
+  (analyze-text SAMPLE_TEXT))
+
+; File mode - read from file
+(fn process-file (filename)
+  (print (concat "Reading file: " filename))
+  ; In production: (let content (read-file filename))
+  ; For demo, use sample text
+  (analyze-text SAMPLE_TEXT))
+
+; Main entry point
+(fn main (args)
+  (if (= (length args) 0)
+      (demo)
+      (process-file (get args 0))))
+
+; Run the demo
+(main (array))

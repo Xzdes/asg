@@ -1,0 +1,51 @@
+; ASG Closures Test
+; Testing variable capture from outer scope
+
+(print "=== Closures ===")
+
+; Test 1: Simple closure - capture one variable
+(let multiplier 10)
+(let scale (lambda (x) (* x multiplier)))
+(print "scale(5) with multiplier=10:")
+(print (scale 5))  ; Should be 50
+
+; Test 2: Closure in map
+(let factor 3)
+(let nums (array 1 2 3 4 5))
+(let scaled (map nums (lambda (x) (* x factor))))
+(print "map [1,2,3,4,5] * 3:")
+(print scaled)  ; Should be [3, 6, 9, 12, 15]
+
+; Test 3: Closure in filter with captured threshold
+(let threshold 3)
+(let big (filter nums (lambda (x) (> x threshold))))
+(print "filter [1,2,3,4,5] > 3:")
+(print big)  ; Should be [4, 5]
+
+; Test 4: Nested closures (currying)
+(fn make-adder (n)
+  (lambda (x) (+ x n)))
+
+(let add5 (make-adder 5))
+(let add10 (make-adder 10))
+
+(print "add5(3):")
+(print (add5 3))  ; Should be 8
+
+(print "add10(3):")
+(print (add10 3))  ; Should be 13
+
+; Test 5: Closure capturing multiple variables
+(let a 100)
+(let b 50)
+(let compute (lambda (x) (+ (+ a b) x)))
+(print "compute(7) with a=100, b=50:")
+(print (compute 7))  ; Should be 157
+
+; Test 6: Closure in reduce with captured base
+(let base 1000)
+(let sum-with-base (reduce nums base (lambda (acc x) (+ acc x))))
+(print "reduce [1,2,3,4,5] with base=1000:")
+(print sum-with-base)  ; Should be 1015
+
+(print "=== ALL CLOSURE TESTS PASSED ===")

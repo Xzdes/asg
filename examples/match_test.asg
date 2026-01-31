@@ -1,0 +1,22 @@
+; Test if factorial works with if but not with match
+
+(print "Test with IF:")
+(fn fact-if (n)
+  (if (<= n 1) 1 (* n (fact-if (- n 1)))))
+
+(print (fact-if 3))
+(print (fact-if 4))
+(print (fact-if 5))
+
+(print "Test with MATCH (no recursion):")
+(fn describe (x)
+  (match x
+    0 "zero"
+    1 "one"
+    _ "other"))
+
+(print (describe 0))
+(print (describe 1))
+(print (describe 5))
+
+(print "Done")

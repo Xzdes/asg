@@ -1,0 +1,61 @@
+[package]
+name = "asg"
+version = "1.0.0"
+edition = "2021"
+authors = ["Xzdes <xzdes@yandex.com>"]
+description = "ASG - A programming language built on Abstract Syntax Graph"
+license = "MIT"
+repository = "https://github.com/Xzdes/asg"
+keywords = ["programming-language", "asg", "graph", "compiler", "interpreter"]
+categories = ["compilers", "development-tools"]
+
+[dependencies]
+# Core dependencies
+thiserror = "2.0"
+stacker = "0.1"
+logos = "0.14"
+rustyline = "15.0"
+dirs-next = "2.0"
+byteorder = "1.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+log = "0.4"
+env_logger = "0.11"
+
+# Math/ML dependencies
+ndarray = "0.16"
+ndarray-rand = "0.15"
+rand = "0.9"
+
+# Optional dependencies
+z3 = { version = "0.16", optional = true }
+inkwell = { version = "0.6.0", features = ["llvm18-1"], optional = true }
+tiny_http = { version = "0.12", optional = true }
+eframe = { version = "0.29", optional = true }
+egui = { version = "0.29", optional = true }
+wasm-encoder = { version = "0.223", optional = true }
+
+[features]
+default = []
+llvm_backend = ["inkwell"]
+wasm_backend = ["wasm-encoder"]
+proofs = ["z3"]
+web = ["tiny_http"]
+gui = ["eframe", "egui"]
+full = ["web", "gui", "wasm_backend"]
+
+[dev-dependencies]
+criterion = "0.7"
+tempfile = "3.17"
+
+[[bench]]
+name = "serialization_bench"
+harness = false
+
+[[bench]]
+name = "interpreter_bench"
+harness = false
+
+[[bin]]
+name = "asg"
+path = "src/bin/asg.rs"

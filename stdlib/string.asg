@@ -1,0 +1,162 @@
+; ASG String Module
+; Функции для работы со строками.
+
+(module string
+
+  ; === Базовые операции ===
+  ; str-length, str-concat, str-split, str-join - встроенные
+
+  ; Пустая ли строка
+  (fn empty? (s)
+    (= (str-length s) 0))
+
+  ; Не пустая
+  (fn not-empty? (s)
+    (> (str-length s) 0))
+
+  ; Повторить строку n раз
+  (fn repeat (s n)
+    (if (<= n 0) ""
+      (str-concat s (repeat s (- n 1)))))
+
+  ; Обратить строку
+  (fn reverse-str (s)
+    (str-join (reverse (str-split s "")) ""))
+
+  ; === Проверки ===
+
+  ; Начинается ли с подстроки
+  (fn starts-with? (s prefix)
+    (let len (str-length prefix))
+    (= (substring s 0 len) prefix))
+
+  ; Заканчивается ли подстрокой
+  (fn ends-with? (s suffix)
+    (let slen (str-length s))
+    (let suflen (str-length suffix))
+    (= (substring s (- slen suflen) slen) suffix))
+
+  ; Содержит ли подстроку
+  ; (fn str-contains (s sub) - встроенная)
+
+  ; Проверка на пробельный символ
+  (fn blank? (s)
+    (= (str-trim s) ""))
+
+  ; === Трансформации ===
+
+  ; Заменить первое вхождение
+  ; (fn str-replace (s from to) - встроенная)
+
+  ; Заменить все вхождения
+  (fn replace-all (s from to)
+    (str-join (str-split s from) to))
+
+  ; Удалить подстроку
+  (fn remove (s sub)
+    (replace-all s sub ""))
+
+  ; Pad left (дополнить слева)
+  (fn pad-left (s len char)
+    (let diff (- len (str-length s)))
+    (if (<= diff 0) s
+      (str-concat (repeat char diff) s)))
+
+  ; Pad right (дополнить справа)
+  (fn pad-right (s len char)
+    (let diff (- len (str-length s)))
+    (if (<= diff 0) s
+      (str-concat s (repeat char diff))))
+
+  ; Center (отцентрировать)
+  (fn center (s len char)
+    (let diff (- len (str-length s)))
+    (if (<= diff 0) s
+      (do
+        (let left-pad (/ diff 2))
+        (let right-pad (- diff left-pad))
+        (str-concat (repeat char left-pad)
+                    (str-concat s (repeat char right-pad))))))
+
+  ; Обрезать до длины
+  (fn truncate (s max-len)
+    (if (<= (str-length s) max-len) s
+      (substring s 0 max-len)))
+
+  ; Обрезать с многоточием
+  (fn truncate-ellipsis (s max-len)
+    (if (<= (str-length s) max-len) s
+      (str-concat (substring s 0 (- max-len 3)) "...")))
+
+  ; === Разбиение ===
+
+  ; Разбить на строки
+  (fn lines (s)
+    (str-split s "\n"))
+
+  ; Собрать строки
+  (fn unlines (arr)
+    (str-join arr "\n"))
+
+  ; Разбить на слова
+  (fn words (s)
+    (filter (str-split s " ") not-empty?))
+
+  ; Собрать слова
+  (fn unwords (arr)
+    (str-join arr " "))
+
+  ; Разбить на символы
+  (fn chars (s)
+    (str-split s ""))
+
+  ; Собрать символы
+  (fn from-chars (arr)
+    (str-join arr ""))
+
+  ; === Поиск ===
+
+  ; Индекс подстроки
+  (fn index-of (s sub)
+    (index-of-helper s sub 0))
+
+  (fn index-of-helper (s sub i)
+    (if (> (+ i (str-length sub)) (str-length s)) -1
+      (if (= (substring s i (+ i (str-length sub))) sub) i
+        (index-of-helper s sub (+ i 1)))))
+
+  ; Последний индекс подстроки
+  (fn last-index-of (s sub)
+    (last-index-helper s sub (- (str-length s) (str-length sub))))
+
+  (fn last-index-helper (s sub i)
+    (if (< i 0) -1
+      (if (= (substring s i (+ i (str-length sub))) sub) i
+        (last-index-helper s sub (- i 1)))))
+
+  ; Количество вхождений
+  (fn count-occurrences (s sub)
+    (- (length (str-split s sub)) 1))
+
+  ; === Форматирование ===
+
+  ; Capitalize (первая буква заглавная)
+  (fn capitalize (s)
+    (if (empty? s) s
+      (str-concat (str-upper (substring s 0 1))
+                  (str-lower (substring s 1 (str-length s))))))
+
+  ; Title case (каждое слово с заглавной)
+  (fn title-case (s)
+    (unwords (map (words s) capitalize)))
+
+  ; === Экспорты ===
+  (export
+    empty? not-empty? repeat reverse-str
+    starts-with? ends-with? blank?
+    replace-all remove
+    pad-left pad-right center
+    truncate truncate-ellipsis
+    lines unlines words unwords chars from-chars
+    index-of last-index-of count-occurrences
+    capitalize title-case))

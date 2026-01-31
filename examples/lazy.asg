@@ -1,0 +1,54 @@
+; ASG Lazy Sequences Test
+
+(print "=== Lazy Sequences ===")
+
+; Iterate - create infinite sequence
+(print "Iterate (double from 1):")
+(let doubles (iterate (lambda (x) (* x 2)) 1))
+(print (take-lazy 10 doubles))
+
+; Repeat - infinite repetition
+(print "Repeat 42:")
+(let fortytwos (repeat 42))
+(print (take-lazy 5 fortytwos))
+
+; Cycle - cycle through array
+(print "Cycle [1,2,3]:")
+(let cycled (cycle (array 1 2 3)))
+(print (take-lazy 10 cycled))
+
+; Lazy range
+(print "Lazy range 1..100 (take 10):")
+(let nums (lazy-range 1 100))
+(print (take-lazy 10 nums))
+
+; Lazy map
+(print "Lazy map (square) on range:")
+(let squares (lazy-map (lambda (x) (* x x)) (lazy-range 1 100)))
+(print (take-lazy 10 squares))
+
+; Lazy filter
+(print "Lazy filter (even) on range:")
+(let evens (lazy-filter (lambda (x) (== (% x 2) 0)) (lazy-range 1 100)))
+(print (take-lazy 10 evens))
+
+; Chained lazy ops: filter even, then map square
+(print "Even squares (filter then map):")
+(let even-squares (lazy-map
+  (lambda (x) (* x x))
+  (lazy-filter (lambda (x) (== (% x 2) 0)) (lazy-range 1 100))))
+(print (take-lazy 10 even-squares))
+
+; Powers of 2
+(print "Powers of 2 (iterate *2 from 1):")
+(print (take-lazy 10 (iterate (lambda (x) (* x 2)) 1)))
+
+; Collect (limited)
+(print "Collect lazy range 1..15:")
+(print (collect (lazy-range 1 16)))
+
+; Sum of first 100 natural numbers using lazy
+(print "Sum of 1..100 using lazy:")
+(print (sum (take-lazy 100 (lazy-range 1 101))))
+
+(print "=== LAZY TESTS PASSED ===")

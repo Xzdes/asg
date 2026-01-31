@@ -1,0 +1,21 @@
+[package]
+name = "asg-lsp"
+version = "1.0.0"
+edition = "2021"
+authors = ["Xzdes <xzdes@yandex.com>"]
+description = "Language Server Protocol (LSP) implementation for ASG"
+license = "MIT"
+repository = "https://github.com/Xzdes/asg"
+
+[dependencies]
+asg = { path = ".." }
+tower-lsp = "0.20"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+log = "0.4"
+env_logger = "0.11"
+
+[[bin]]
+name = "asg-lsp"
+path = "src/main.rs"

@@ -1,0 +1,14 @@
+; ============================================
+; NATIVE GUI CALCULATOR
+; Using egui/eframe for native desktop UI
+;
+; Run: cargo run --features gui -- examples/calculator_gui.asg
+; ============================================
+
+(print "Launching Native GUI Calculator...")
+(print "")
+
+; Launch the built-in calculator GUI
+(gui-run "calculator")
+
+(print "Calculator closed.")

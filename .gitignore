@@ -1,0 +1,65 @@
+# ===========================================
+# ASG Project .gitignore
+# ===========================================
+
+# === Rust / Cargo ===
+/target/
+**/target/
+**/*.rs.bk
+
+# === Временные файлы ===
+*.log
+*.tmp
+*.swp
+*~
+*.bak
+
+# === OS-специфичные ===
+.DS_Store
+Thumbs.db
+Desktop.ini
+._*
+
+# === IDE / Редакторы ===
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+*.sublime-workspace
+*.sublime-project
+.claude/
+
+# === Node.js (VSCode extension) ===
+node_modules/
+*.vsix
+npm-debug.log*
+yarn-error.log*
+
+# === TypeScript build artifacts ===
+vscode-asg/out/
+vscode-asg/dist/
+
+# === ASG package manager ===
+.asg/packages/
+asg.lock
+
+# === Compiled outputs ===
+*.exe
+*.dll
+*.so
+*.dylib
+*.wasm
+!examples/*.wasm
+
+# === Test/debug artifacts ===
+*.pdb
+*.ilk
+core
+core.*
+
+# === Documentation build ===
+/docs/book/
+/docs/_build/
+
+# === Benchmark results ===
+/benchmarks/results/

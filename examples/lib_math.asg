@@ -1,0 +1,15 @@
+; Math Library for Import Test
+
+(fn square (x) (* x x))
+
+(fn cube (x) (* x (* x x)))
+
+(fn power (base exp)
+  (if (<= exp 0)
+    1
+    (* base (power base (- exp 1)))))
+
+(fn factorial (n)
+  (if (<= n 1) 1 (* n (factorial (- n 1)))))
+
+(let math-pi 3.14159)

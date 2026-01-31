@@ -1,0 +1,15 @@
+; Sum Benchmark
+; Compute sum of 1 to 1,000,000 using loop
+
+(let N 1000000)
+(let sum 0)
+(let i 1)
+
+(while (<= i N)
+  (do
+    (set sum (+ sum i))
+    (set i (+ i 1))))
+
+(print "=== Sum Benchmark ===")
+(print "sum(1..1000000) = ")
+(print sum)

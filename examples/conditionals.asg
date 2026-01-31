@@ -1,0 +1,7 @@
+; ASG Conditionals - Условные выражения
+; Запуск: asg examples/conditionals.asg
+
+; Абсолютное значение
+(let x -42)
+(let abs_x (if (< x 0) (neg x) x))
+abs_x  ; 42

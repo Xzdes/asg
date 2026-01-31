@@ -1,0 +1,75 @@
+; ============================================
+; DATA PROCESSING EXAMPLE
+; Demonstrates functional data transformations
+;
+; Run: cargo run -- examples/data_processing.asg
+; ============================================
+
+(print "=== Data Processing with ASG ===")
+(print "")
+
+; Sample data: list of users
+(let users (array
+  (dict "name" "Alice" "age" 28 "score" 95)
+  (dict "name" "Bob" "age" 34 "score" 82)
+  (dict "name" "Charlie" "age" 22 "score" 91)
+  (dict "name" "Diana" "age" 29 "score" 78)
+  (dict "name" "Eve" "age" 31 "score" 88)))
+
+(print "Original data:")
+(print users)
+(print "")
+
+; 1. Filter: users older than 25
+(print "1. Users older than 25:")
+(let adults (filter users (lambda (u) (> (dict-get u "age") 25))))
+(print adults)
+(print "")
+
+; 2. Map: extract names
+(print "2. All names:")
+(let names (map users (lambda (u) (dict-get u "name"))))
+(print names)
+(print "")
+
+; 3. Map: calculate bonus (score * 10)
+(print "3. Bonuses (score * 10):")
+(let bonuses (map users (lambda (u)
+  (dict "name" (dict-get u "name")
+        "bonus" (* (dict-get u "score") 10)))))
+(print bonuses)
+(print "")
+
+; 4. Reduce: total score
+(print "4. Total score:")
+(let total (reduce users 0 (lambda (acc u) (+ acc (dict-get u "score")))))
+(print total)
+(print "")
+
+; 5. Reduce: average age
+(print "5. Average age:")
+(let total-age (reduce users 0 (lambda (acc u) (+ acc (dict-get u "age")))))
+(let avg-age (/ total-age (length users)))
+(print avg-age)
+(print "")
+
+; 6. Pipe: combine operations
+(print "6. Pipeline: filter high scorers, get names:")
+(let high-scorers
+  (|> users
+      (filter (lambda (u) (> (dict-get u "score") 85)))
+      (map (lambda (u) (dict-get u "name")))))
+(print high-scorers)
+(print "")
+
+; 7. List comprehension
+(print "7. List comprehension: squares of ages > 25:")
+(let squares
+  (list-comp (* age age)
+             age
+             (map users (lambda (u) (dict-get u "age")))
+             (> age 25)))
+(print squares)
+(print "")
+
+(print "=== Processing Complete ===")

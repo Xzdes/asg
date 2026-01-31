@@ -1,0 +1,67 @@
+; ============================================
+; WEB CALCULATOR
+; HTML-based calculator (static page generator)
+; Run: cargo run --bin asg -- examples/calculator_web.asg
+; Then open calculator.html in browser
+; ============================================
+
+(print "Generating Web Calculator...")
+
+; Generate HTML page with embedded JavaScript calculator
+(let html-content
+  (html
+    (head
+      (title "ASG Web Calculator")
+      (style "
+        body { font-family: Arial, sans-serif; background: #1a1a2e; color: white; display: flex; justify-content: center; padding-top: 50px; }
+        .calculator { background: #16213e; padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .display { background: #0f3460; padding: 20px; font-size: 2em; text-align: right; border-radius: 10px; margin-bottom: 15px; min-height: 40px; }
+        .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        button { padding: 20px; font-size: 1.2em; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        button:hover { transform: scale(1.05); }
+        .num { background: #e94560; color: white; }
+        .op { background: #533483; color: white; }
+        .eq { background: #0f3460; color: white; grid-column: span 2; }
+        .clear { background: #ff6b6b; color: white; }
+        h2 { text-align: center; color: #e94560; }
+      "))
+    (body
+      (div "@class=calculator"
+        (h2 "ASG Calculator")
+        (div "@class=display" "@id=display" "0")
+        (div "@class=buttons"
+          (html-button "@class=clear" "@onclick=clearDisplay()" "C")
+          (html-button "@class=op" "@onclick=appendOp('(')" "(")
+          (html-button "@class=op" "@onclick=appendOp(')')" ")")
+          (html-button "@class=op" "@onclick=appendOp('/')" "÷")
+          (html-button "@class=num" "@onclick=appendNum('7')" "7")
+          (html-button "@class=num" "@onclick=appendNum('8')" "8")
+          (html-button "@class=num" "@onclick=appendNum('9')" "9")
+          (html-button "@class=op" "@onclick=appendOp('*')" "×")
+          (html-button "@class=num" "@onclick=appendNum('4')" "4")
+          (html-button "@class=num" "@onclick=appendNum('5')" "5")
+          (html-button "@class=num" "@onclick=appendNum('6')" "6")
+          (html-button "@class=op" "@onclick=appendOp('-')" "−")
+          (html-button "@class=num" "@onclick=appendNum('1')" "1")
+          (html-button "@class=num" "@onclick=appendNum('2')" "2")
+          (html-button "@class=num" "@onclick=appendNum('3')" "3")
+          (html-button "@class=op" "@onclick=appendOp('+')" "+")
+          (html-button "@class=num" "@onclick=appendNum('0')" "0")
+          (html-button "@class=num" "@onclick=appendNum('.')" ".")
+          (html-button "@class=eq" "@onclick=calculate()" "=")))
+      (script "
+        let display = '0';
+        function updateDisplay() { document.getElementById('display').textContent = display; }
+        function appendNum(n) { display = display === '0' ? n : display + n; updateDisplay(); }
+        function appendOp(o) { display += o; updateDisplay(); }
+        function clearDisplay() { display = '0'; updateDisplay(); }
+        function calculate() { try { display = String(eval(display)); } catch(e) { display = 'Error'; } updateDisplay(); }
+      ")
+      (p "@style=text-align:center;margin-top:20px;color:#666;" "Generated with ASG v0.6.0"))))
+
+; Write to file
+(write-file "calculator.html" html-content)
+
+(print "")
+(print "Created: calculator.html")
+(print "Open it in your browser!")

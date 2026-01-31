@@ -1,0 +1,49 @@
+; ASG List Comprehensions Test
+
+(print "=== List Comprehensions ===")
+
+; Basic list comprehension
+(print "Squares 1..5:")
+(print (list-comp (* x x) x (range 1 6)))
+
+; With condition (filter even)
+(print "Even numbers 1..10:")
+(print (list-comp x x (range 1 11) (== (% x 2) 0)))
+
+; Even squares
+(print "Squares of even numbers 1..10:")
+(print (list-comp (* x x) x (range 1 11) (== (% x 2) 0)))
+
+; Transform strings
+(print "Double elements:")
+(print (list-comp (* n 2) n (array 1 2 3 4 5)))
+
+; Condition with greater than
+(print "Numbers > 5 in 1..10:")
+(print (list-comp x x (range 1 11) (> x 5)))
+
+; Complex expression
+(print "x*x + 1 for x in 1..5:")
+(print (list-comp (+ (* x x) 1) x (range 1 6)))
+
+; Cubes
+(print "Cubes 1..5:")
+(print (list-comp (* (* x x) x) x (range 1 6)))
+
+; FizzBuzz-style
+(print "Mark multiples of 3:")
+(print (list-comp
+  (if (== (% x 3) 0) "fizz" x)
+  x
+  (range 1 16)))
+
+; Sum of comprehension result
+(print "Sum of squares 1..5:")
+(print (sum (list-comp (* x x) x (range 1 6))))
+
+; Filter and collect
+(print "Positive numbers from mixed:")
+(let nums (array -3 -1 0 2 5 -2 8))
+(print (list-comp x x nums (> x 0)))
+
+(print "=== COMPREHENSIONS TESTS PASSED ===")

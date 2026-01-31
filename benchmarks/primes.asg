@@ -1,0 +1,40 @@
+; Prime Sieve Benchmark
+; Count primes up to 10,000
+
+; Check if n is prime using trial division
+(fn is-prime (n)
+  (if (<= n 1)
+      false
+      (if (== n 2)
+          true
+          (if (== (% n 2) 0)
+              false
+              (check-odd-divisors n 3)))))
+
+; Helper: check odd divisors from d
+(fn check-odd-divisors (n d)
+  (if (> (* d d) n)
+      true
+      (if (== (% n d) 0)
+          false
+          (check-odd-divisors n (+ d 2)))))
+
+; Count primes up to limit using loop
+(fn count-primes (limit)
+  (do
+    (let count 0)
+    (let n 2)
+    (while (<= n limit)
+      (do
+        (if (is-prime n)
+            (set count (+ count 1))
+            ())
+        (set n (+ n 1))))
+    count))
+
+(let N 10000)
+(let result (count-primes N))
+
+(print "=== Prime Sieve Benchmark ===")
+(print "Primes up to 10000: ")
+(print result)

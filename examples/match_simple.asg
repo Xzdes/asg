@@ -1,0 +1,44 @@
+; Simple match test
+(print "=== Simple Match ===")
+
+; Test basic match without recursion
+(fn test-match (n)
+  (match n
+    0 "zero"
+    1 "one"
+    _ "other"))
+
+(print (test-match 0))
+(print (test-match 1))
+(print (test-match 5))
+
+; Test match with binding (no recursion)
+(fn test-bind (x)
+  (match x
+    0 100
+    n (+ n 1)))
+
+(print (test-bind 0))
+(print (test-bind 5))
+(print (test-bind 10))
+
+; Test simple factorial without match (verify recursion works)
+(fn fact-if (n)
+  (if (<= n 1) 1 (* n (fact-if (- n 1)))))
+
+(print "Factorial with if:")
+(print (fact-if 5))
+
+; Test match recursion step by step
+(fn fact-match (n)
+  (match n
+    0 1
+    1 1
+    m (* m (fact-match (- m 1)))))
+
+(print "Testing match pattern step by step:")
+(print (fact-match 0))
+(print (fact-match 1))
+(print (fact-match 2))
+
+(print "=== DONE ===")

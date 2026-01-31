@@ -1,0 +1,97 @@
+; ============================================
+; INTERACTIVE TODO LIST
+; A simple command-line todo application
+;
+; Run: cargo run -- examples/todo_app.asg
+; ============================================
+
+(print "=== ASG Todo List ===")
+(print "")
+(print "Commands:")
+(print "  1 - Add task")
+(print "  2 - List tasks")
+(print "  3 - Complete task")
+(print "  4 - Clear completed")
+(print "  0 - Exit")
+(print "")
+
+(let todos (array))
+(let next-id 1)
+(let running true)
+
+(fn show-tasks ()
+  (if (== (length todos) 0)
+    (print "No tasks yet!")
+    (do
+      (print "")
+      (print "Your tasks:")
+      (let i 0)
+      (while (< i (length todos))
+        (do
+          (let task (index todos i))
+          (let status (if (dict-get task "done") "[x]" "[ ]"))
+          (print (concat "  "
+            (concat (str (dict-get task "id"))
+            (concat ". "
+            (concat status
+            (concat " " (dict-get task "text")))))))
+          (set i (+ i 1))))
+      (print ""))))
+
+(fn add-task (text)
+  (do
+    (set todos (append todos
+      (dict "id" next-id "text" text "done" false)))
+    (set next-id (+ next-id 1))
+    (print (concat "Added: " text))))
+
+(fn complete-task (id)
+  (do
+    (let new-todos (array))
+    (let found false)
+    (let i 0)
+    (while (< i (length todos))
+      (do
+        (let task (index todos i))
+        (if (== (dict-get task "id") id)
+          (do
+            (set new-todos (append new-todos
+              (dict-set task "done" true)))
+            (set found true)
+            (print (concat "Completed: " (dict-get task "text"))))
+          (set new-todos (append new-todos task)))
+        (set i (+ i 1))))
+    (set todos new-todos)
+    (if (not found)
+      (print "Task not found!"))))
+
+(fn clear-completed ()
+  (do
+    (let new-todos (filter todos (lambda (t) (not (dict-get t "done")))))
+    (let removed (- (length todos) (length new-todos)))
+    (set todos new-todos)
+    (print (concat "Cleared " (concat (str removed) " completed tasks")))))
+
+; Main loop
+(while running
+  (do
+    (let cmd (input-int "Enter command (0-4): "))
+
+    (if (== cmd 0)
+      (do
+        (set running false)
+        (print "Goodbye!"))
+    (if (== cmd 1)
+      (do
+        (let text (input "Task description: "))
+        (add-task text))
+    (if (== cmd 2)
+      (show-tasks)
+    (if (== cmd 3)
+      (do
+        (show-tasks)
+        (let id (input-int "Task ID to complete: "))
+        (complete-task id))
+    (if (== cmd 4)
+      (clear-completed)
+      (print "Unknown command!"))))))))

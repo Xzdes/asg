@@ -1,0 +1,14 @@
+; Fibonacci Benchmark
+; Compute fib(35) using naive recursive algorithm
+
+(fn fib (n)
+  (if (<= n 1)
+      n
+      (+ (fib (- n 1)) (fib (- n 2)))))
+
+; Run benchmark
+(let result (fib 35))
+
+(print "=== Fibonacci Benchmark ===")
+(print "fib(35) = ")
+(print result)

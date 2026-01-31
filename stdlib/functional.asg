@@ -1,0 +1,173 @@
+; ASG Functional Module
+; Функции для функционального программирования.
+
+(module functional
+
+  ; === Комбинаторы ===
+
+  ; Идентичность
+  (fn identity (x) x)
+
+  ; Константа
+  (fn constantly (x)
+    (lambda (y) x))
+
+  ; Композиция
+  (fn compose (f g)
+    (lambda (x) (f (g x))))
+
+  ; Pipe (обратная композиция)
+  (fn pipe (f g)
+    (lambda (x) (g (f x))))
+
+  ; Композиция нескольких функций
+  (fn compose-all (&fns)
+    (reduce fns identity compose))
+
+  ; Pipe нескольких функций
+  (fn pipe-all (&fns)
+    (reduce fns identity pipe))
+
+  ; Flip — поменять аргументы местами
+  (fn flip (f)
+    (lambda (x y) (f y x)))
+
+  ; === Частичное применение ===
+
+  ; Частичное применение слева
+  (fn partial (f &args)
+    (lambda (&more)
+      (apply f (concat args more))))
+
+  ; Частичное применение справа
+  (fn partial-right (f &args)
+    (lambda (&more)
+      (apply f (concat more args))))
+
+  ; Применить первый аргумент
+  (fn partial1 (f x)
+    (lambda (&args) (apply f (append (singleton x) args))))
+
+  ; === Мемоизация ===
+
+  ; Простая мемоизация (для одного аргумента)
+  (fn memoize (f)
+    (let cache (dict))
+    (lambda (x)
+      (if (dict-has cache x)
+        (dict-get cache x)
+        (do
+          (let result (f x))
+          (dict-set cache x result)
+          result))))
+
+  ; === Повторение ===
+
+  ; Применить функцию n раз
+  (fn iterate-n (f init n)
+    (if (<= n 0) init
+      (iterate-n f (f init) (- n 1))))
+
+  ; Применять пока условие истинно
+  (fn iterate-while (f pred init)
+    (if (not (pred init)) init
+      (iterate-while f pred (f init))))
+
+  ; Применять пока условие ложно
+  (fn iterate-until (f pred init)
+    (if (pred init) init
+      (iterate-until f pred (f init))))
+
+  ; Фиксированная точка
+  (fn fix (f init)
+    (let next (f init))
+    (if (= next init) init
+      (fix f next)))
+
+  ; === Каррирование ===
+
+  ; Curry для функции двух аргументов
+  (fn curry2 (f)
+    (lambda (x)
+      (lambda (y)
+        (f x y))))
+
+  ; Uncurry для функции двух аргументов
+  (fn uncurry2 (f)
+    (lambda (x y)
+      ((f x) y)))
+
+  ; Curry для функции трёх аргументов
+  (fn curry3 (f)
+    (lambda (x)
+      (lambda (y)
+        (lambda (z)
+          (f x y z)))))
+
+  ; === Логические комбинаторы ===
+
+  ; Комбинация предикатов через AND
+  (fn pred-and (p1 p2)
+    (lambda (x) (and (p1 x) (p2 x))))
+
+  ; Комбинация предикатов через OR
+  (fn pred-or (p1 p2)
+    (lambda (x) (or (p1 x) (p2 x))))
+
+  ; Отрицание предиката
+  (fn pred-not (p)
+    (lambda (x) (not (p x))))
+
+  ; Все предикаты истинны
+  (fn all-preds (&preds)
+    (lambda (x)
+      (all? preds (lambda (p) (p x)))))
+
+  ; Хотя бы один предикат истинен
+  (fn any-preds (&preds)
+    (lambda (x)
+      (any? preds (lambda (p) (p x)))))
+
+  ; === Комбинаторы для работы с опциями ===
+
+  ; Maybe map
+  (fn maybe-map (f x)
+    (if (= x nil) nil (f x)))
+
+  ; Maybe with default
+  (fn maybe-default (default x)
+    (if (= x nil) default x))
+
+  ; Maybe chain
+  (fn maybe-chain (f x)
+    (if (= x nil) nil (f x)))
+
+  ; === Y-комбинатор (для анонимной рекурсии) ===
+
+  (fn Y (f)
+    ((lambda (x) (f (lambda (y) ((x x) y))))
+     (lambda (x) (f (lambda (y) ((x x) y))))))
+
+  ; === Трамплин (для оптимизации хвостовой рекурсии) ===
+
+  ; Обёртка для отложенного вызова
+  (fn trampoline (f)
+    (let result (f))
+    (if (fn? result)
+      (trampoline result)
+      result))
+
+  ; Bounce — создать отложенный вызов
+  (fn bounce (f &args)
+    (lambda () (apply f args)))
+
+  ; === Экспорты ===
+  (export
+    identity constantly compose pipe compose-all pipe-all flip
+    partial partial-right partial1
+    memoize
+    iterate-n iterate-while iterate-until fix
+    curry2 uncurry2 curry3
+    pred-and pred-or pred-not all-preds any-preds
+    maybe-map maybe-default maybe-chain
+    Y trampoline bounce))
