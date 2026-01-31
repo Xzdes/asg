@@ -21,7 +21,7 @@ fn benchmark_json_deserialization(c: &mut Criterion) {
 
     c.bench_function("ASG JSON deserialization", |b| {
         b.iter(|| {
-            black_box(serde_json::from_str::<asg::asg::ASG>(&json).unwrap())
+            black_box(serde_json::from_str::<asg_lang::asg::ASG>(&json).unwrap())
         });
     });
 }
@@ -31,7 +31,7 @@ fn benchmark_roundtrip(c: &mut Criterion) {
         b.iter(|| {
             let (asg, _) = parse_expr("(if (< x 0) (neg x) x)").unwrap();
             let json = serde_json::to_string(&asg).unwrap();
-            black_box(serde_json::from_str::<asg::asg::ASG>(&json).unwrap())
+            black_box(serde_json::from_str::<asg_lang::asg::ASG>(&json).unwrap())
         });
     });
 }
