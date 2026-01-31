@@ -40,7 +40,7 @@ cargo test
 
 ```toml
 [dependencies]
-asg = { path = "../asg" }
+asg-lang = "1.0"
 ```
 
 Теперь можно создавать программы на основе ASG.
@@ -48,9 +48,9 @@ asg = { path = "../asg" }
 Пример:
 
 ```rust
-use asg::asg::ASG;
-use asg::node_factories::{literal_int, binary_operation};
-use asg::interpreter::InterpreterContext;
+use asg_lang::asg::ASG;
+use asg_lang::node_factories::{literal_int, binary_operation};
+use asg_lang::interpreter::InterpreterContext;
 
 fn main() {
     let mut asg = ASG::new();

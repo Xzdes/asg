@@ -1,8 +1,8 @@
 //! Benchmark for interpreter execution.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use asg::interpreter::Interpreter;
-use asg::parser::parse_expr;
+use asg_lang::interpreter::Interpreter;
+use asg_lang::parser::parse_expr;
 
 fn benchmark_simple_arithmetic(c: &mut Criterion) {
     c.bench_function("simple arithmetic (+ 1 2)", |b| {

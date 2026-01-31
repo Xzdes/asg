@@ -1,6 +1,6 @@
 [package]
 name = "asg-lang"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 authors = ["Xzdes <xzdes@yandex.com>"]
 description = "ASG - A programming language built on Abstract Syntax Graph"

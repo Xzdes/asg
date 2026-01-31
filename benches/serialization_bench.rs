@@ -1,7 +1,7 @@
 //! Benchmark for ASG serialization/deserialization.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use asg::parser::parse_expr;
+use asg_lang::parser::parse_expr;
 
 fn benchmark_json_serialization(c: &mut Criterion) {
     // Prepare ASG

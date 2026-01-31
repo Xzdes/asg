@@ -3,10 +3,10 @@
 //! Измеряем скорость сохранения и загрузки ASG.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use asg::asg::{ASG, NodeID};
-use asg::node_factories::literal_int;
-use asg::syn1_writer::save_syn1;
-use asg::syn1::load_syn1;
+use asg_lang::asg::{ASG, NodeID};
+use asg_lang::node_factories::literal_int;
+use asg_lang::syn1_writer::save_syn1;
+use asg_lang::syn1::load_syn1;
 use std::fs;
 use std::path::Path;
 

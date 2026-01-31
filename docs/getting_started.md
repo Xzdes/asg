@@ -40,7 +40,7 @@ To include ASG as a dependency, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-asg = { path = "../asg" }
+asg-lang = "1.0"
 ```
 
 Then you can start building your ASG-based programs.
@@ -48,9 +48,9 @@ Then you can start building your ASG-based programs.
 Example:
 
 ```rust
-use asg::asg::ASG;
-use asg::node_factories::{literal_int, binary_operation};
-use asg::interpreter::InterpreterContext;
+use asg_lang::asg::ASG;
+use asg_lang::node_factories::{literal_int, binary_operation};
+use asg_lang::interpreter::InterpreterContext;
 
 fn main() {
     let mut asg = ASG::new();

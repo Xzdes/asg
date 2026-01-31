@@ -3,9 +3,9 @@
 //! Измеряем скорость выполнения простого ASG.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use asg::asg::{ASG, NodeID};
-use asg::node_factories::literal_int;
-use asg::interpreter::InterpreterContext;
+use asg_lang::asg::{ASG, NodeID};
+use asg_lang::node_factories::literal_int;
+use asg_lang::interpreter::InterpreterContext;
 
 fn benchmark_interpreter(c: &mut Criterion) {
     c.bench_function("interpreter execution", |b| {
