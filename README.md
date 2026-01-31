@@ -2,6 +2,7 @@
 
 **ASG** (Abstract Syntax Graph) — современный язык программирования, построенный на основе абстрактного синтаксического графа.
 
+[![Crates.io](https://img.shields.io/crates/v/asg-lang.svg)](https://crates.io/crates/asg-lang)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -18,13 +19,19 @@
 
 ```bash
 # Установка
-cargo install asg
+cargo install asg-lang
 
 # Запуск REPL
 asg
 
 # Выполнение файла
 asg examples/demo.asg
+
+# LSP сервер для IDE
+cargo install asg-lsp
+
+# Пакетный менеджер
+cargo install asg-pkg
 ```
 
 ## Пример кода
