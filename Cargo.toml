@@ -1,5 +1,5 @@
 [package]
-name = "asg"
+name = "asg-lang"
 version = "1.0.0"
 edition = "2021"
 authors = ["Xzdes <xzdes@yandex.com>"]

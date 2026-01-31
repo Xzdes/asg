@@ -10,7 +10,7 @@ keywords = ["asg", "lsp", "language-server", "ide"]
 categories = ["development-tools", "text-editors"]
 
 [dependencies]
-asg = "1.0"
+asg-lang = "1.0"
 tower-lsp = "0.20"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }

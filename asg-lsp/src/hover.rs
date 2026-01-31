@@ -1,8 +1,8 @@
 //! Hover информация для LSP.
 
 use tower_lsp::lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position};
-use asg::asg::ASG;
-use asg::nodecodes::NodeType;
+use asg_lang::asg::ASG;
+use asg_lang::nodecodes::NodeType;
 
 /// Получить hover информацию.
 pub fn get_hover_info(
@@ -137,7 +137,7 @@ Returns a % b"#,
 }
 
 /// Получить информацию об узле ASG.
-fn get_node_info(node: &asg::asg::Node) -> String {
+fn get_node_info(node: &asg_lang::asg::Node) -> String {
     let name = node.get_name().unwrap_or_else(|| "<anonymous>".to_string());
 
     match node.node_type {
@@ -145,7 +145,7 @@ fn get_node_info(node: &asg::asg::Node) -> String {
             let params: Vec<_> = node
                 .edges
                 .iter()
-                .filter(|e| e.edge_type == asg::nodecodes::EdgeType::FunctionParameter)
+                .filter(|e| e.edge_type == asg_lang::nodecodes::EdgeType::FunctionParameter)
                 .filter_map(|_| Some("arg".to_string()))
                 .collect();
 

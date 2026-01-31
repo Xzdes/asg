@@ -1,8 +1,8 @@
 //! Go to definition implementation.
 
 use tower_lsp::lsp_types::*;
-use asg::asg::ASG;
-use asg::nodecodes::NodeType;
+use asg_lang::asg::ASG;
+use asg_lang::nodecodes::NodeType;
 
 /// Информация о определении символа.
 #[derive(Debug, Clone)]

@@ -7,8 +7,8 @@ use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
 
-use asg::asg::ASG;
-use asg::parser;
+use asg_lang::asg::ASG;
+use asg_lang::parser;
 
 use crate::completion::get_completions;
 use crate::definition::{find_definition, find_references};
@@ -209,7 +209,7 @@ fn get_document_symbols(content: &str, asg: Option<&ASG>) -> Vec<SymbolInformati
 
     if let Some(asg) = asg {
         for node in &asg.nodes {
-            use asg::nodecodes::NodeType;
+            use asg_lang::nodecodes::NodeType;
 
             let (name, kind) = match node.node_type {
                 NodeType::Function => {

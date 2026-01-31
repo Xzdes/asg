@@ -1,8 +1,8 @@
 //! Автодополнение для LSP.
 
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position};
-use asg::asg::ASG;
-use asg::nodecodes::NodeType;
+use asg_lang::asg::ASG;
+use asg_lang::nodecodes::NodeType;
 
 /// Получить элементы автодополнения.
 pub fn get_completions(

@@ -12,8 +12,8 @@ use std::env;
 use std::fs;
 use std::process;
 
-use asg::interpreter::{Interpreter, Value};
-use asg::parser::{parse, parse_expr};
+use asg_lang::interpreter::{Interpreter, Value};
+use asg_lang::parser::{parse, parse_expr};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -347,7 +347,7 @@ fn show_ast(expr: &str) {
 fn show_type(expr: &str, _interpreter: &mut Interpreter) {
     match parse_expr(expr) {
         Ok((asg, root_id)) => {
-            match asg::type_checker::infer_types(&asg) {
+            match asg_lang::type_checker::infer_types(&asg) {
                 Ok(type_info) => {
                     if let Some(ty) = type_info.get(&root_id) {
                         println!("{:?}", ty);
