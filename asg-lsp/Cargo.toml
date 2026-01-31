@@ -3,12 +3,14 @@ name = "asg-lsp"
 version = "1.0.0"
 edition = "2021"
 authors = ["Xzdes <xzdes@yandex.com>"]
-description = "Language Server Protocol (LSP) implementation for ASG"
+description = "Language Server Protocol (LSP) implementation for ASG programming language"
 license = "MIT"
 repository = "https://github.com/Xzdes/asg"
+keywords = ["asg", "lsp", "language-server", "ide"]
+categories = ["development-tools", "text-editors"]
 
 [dependencies]
-asg = { path = ".." }
+asg = "1.0"
 tower-lsp = "0.20"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
