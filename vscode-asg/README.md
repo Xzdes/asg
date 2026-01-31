@@ -37,12 +37,12 @@ Full language support for [ASG](https://github.com/Xzdes/asg) — an AI-friendly
 
 ## Requirements
 
-- **ASG CLI**: Install via `cargo install asg`
+- **ASG CLI**: Install via `cargo install asg-lang`
 - **ASG LSP** (optional): For full IDE support via `cargo install asg-lsp`
 
 ```bash
-# Install ASG interpreter
-cargo install asg
+# Install ASG interpreter (command: asg)
+cargo install asg-lang
 
 # Install LSP for full IDE support (optional)
 cargo install asg-lsp

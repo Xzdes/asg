@@ -1,6 +1,6 @@
 [package]
 name = "asg-lsp"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["Xzdes <xzdes@yandex.com>"]
 description = "Language Server Protocol (LSP) implementation for ASG programming language"
@@ -10,7 +10,7 @@ keywords = ["asg", "lsp", "language-server", "ide"]
 categories = ["development-tools", "text-editors"]
 
 [dependencies]
-asg-lang = "1.0"
+asg-lang = "1.0.1"
 tower-lsp = "0.20"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
