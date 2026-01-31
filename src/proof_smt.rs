@@ -18,7 +18,7 @@ use crate::ASGResult;
 ///
 /// # Пример
 /// ```
-/// use asg::proof_smt;
+/// use asg_lang::proof_smt;
 /// let result = proof_smt::solve_proof("x > 0").unwrap();
 /// assert_eq!(result, true);
 /// ```

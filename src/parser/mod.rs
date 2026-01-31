@@ -36,7 +36,7 @@
 //! # Пример
 //!
 //! ```rust,ignore
-//! use asg::parser::parse;
+//! use asg_lang::parser::parse;
 //!
 //! let source = "(+ 1 2)";
 //! let asg = parse(source).unwrap();
@@ -70,7 +70,7 @@ use crate::error::ASGResult;
 /// # Пример
 ///
 /// ```rust,ignore
-/// use asg::parser::parse;
+/// use asg_lang::parser::parse;
 ///
 /// let (asg, root_ids) = parse("(let x 1) x").unwrap();
 /// ```

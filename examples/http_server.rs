@@ -2,9 +2,9 @@
 //!
 //! Здесь мы показываем, как можно использовать ASG для имитации сетевого сервера.
 
-use asg::asg::{Edge, Node, ASG};
-use asg::interpreter::Interpreter;
-use asg::nodecodes::{EdgeType, NodeType};
+use asg_lang::asg::{Edge, Node, ASG};
+use asg_lang::interpreter::Interpreter;
+use asg_lang::nodecodes::{EdgeType, NodeType};
 
 fn main() {
     let mut asg = ASG::new();

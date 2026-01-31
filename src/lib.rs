@@ -20,8 +20,8 @@
 //! ## Пример использования парсера
 //!
 //! ```rust,ignore
-//! use asg::parser::{parse, parse_expr};
-//! use asg::Interpreter;
+//! use asg_lang::parser::{parse, parse_expr};
+//! use asg_lang::Interpreter;
 //!
 //! // Парсинг выражения
 //! let (asg, root_id) = parse_expr("(+ 1 2)").unwrap();

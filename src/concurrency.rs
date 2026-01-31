@@ -14,7 +14,7 @@ use crate::{ASGError, ASGResult};
 ///
 /// # Пример:
 /// ```
-/// use asg::concurrency::spawn_thread;
+/// use asg_lang::concurrency::spawn_thread;
 /// spawn_thread("Hello from thread!".to_string());
 /// ```
 pub fn spawn_thread(message: String) -> ASGResult<()> {

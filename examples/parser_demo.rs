@@ -2,8 +2,8 @@
 //!
 //! Запуск: cargo run --example parser_demo
 
-use asg::interpreter::Interpreter;
-use asg::parser::{parse, parse_expr};
+use asg_lang::interpreter::Interpreter;
+use asg_lang::parser::{parse, parse_expr};
 
 fn main() {
     println!("=== ASG S-Expression Parser Demo ===\n");
@@ -47,7 +47,7 @@ fn main() {
     println!("6. Переменные: (let x 42) x");
     let (asg, root_ids) = parse("(let x 42) x").unwrap();
     let mut interpreter = Interpreter::new();
-    let mut result = asg::interpreter::Value::Unit;
+    let mut result = asg_lang::interpreter::Value::Unit;
     for root_id in root_ids {
         result = interpreter.execute(&asg, root_id).unwrap();
     }

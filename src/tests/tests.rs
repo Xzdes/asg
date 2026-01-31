@@ -5,10 +5,10 @@
 //! - Proof SMT (ProofDSL).
 //! - Бэкенды (LLVM, C, JS, WASM).
 
-use asg::asg::{ASG, NodeID};
-use asg::node_factories::literal_int;
-use asg::interpreter::InterpreterContext;
-use asg::{
+use crate::asg::{ASG, NodeID};
+use crate::node_factories::literal_int;
+use crate::interpreter::InterpreterContext;
+use crate::{
     type_checker,
     proof,
     proof_dsl::ProofDSL,

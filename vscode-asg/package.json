@@ -3,7 +3,7 @@
   "displayName": "ASG Language",
   "description": "Language support for ASG - Programming language built on Abstract Syntax Graph",
   "version": "1.0.0",
-  "publisher": "xzdes",
+  "publisher": "asg-lang",
   "author": {
     "name": "Xzdes",
     "email": "xzdes@yandex.com"

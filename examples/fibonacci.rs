@@ -1,6 +1,6 @@
-use asg::asg::{ASG, Edge, Node};
-use asg::nodecodes::{NodeType, EdgeType};
-use asg::interpreter::{Interpreter, Value};
+use asg_lang::asg::{ASG, Edge, Node};
+use asg_lang::nodecodes::{NodeType, EdgeType};
+use asg_lang::interpreter::{Interpreter, Value};
 fn main() {
 println!("--- ASG Example: Executing 5 + 8 ---");
 let mut asg = ASG::new();
