@@ -71,8 +71,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "asg"
+name = "asg-lang"
 version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a51d62c70a613fc0bedd930dad12a96ceb224089e6844e69e657555ccc83ddff"
 dependencies = [
  "byteorder",
  "dirs-next",
@@ -93,7 +95,7 @@ dependencies = [
 name = "asg-lsp"
 version = "1.0.0"
 dependencies = [
- "asg",
+ "asg-lang",
  "env_logger",
  "log",
  "serde",
