@@ -73,6 +73,8 @@ dependencies = [
 [[package]]
 name = "asg-lang"
 version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca78965e620d28d2c40b7b82e8807ee3c3d91634793062be9e2580493b35f936"
 dependencies = [
  "byteorder",
  "dirs-next",
