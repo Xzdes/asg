@@ -1,0 +1,164 @@
+; ASG Encoding Module
+; Кодирование и декодирование данных (Base64, Hex, URL).
+
+(module encoding
+
+  ; === Base64 ===
+
+  ; Кодировать строку в Base64
+  (fn base64-encode (str)
+    (base64-encode-builtin str))
+
+  ; Декодировать Base64 в строку
+  (fn base64-decode (str)
+    (base64-decode-builtin str))
+
+  ; Безопасное декодирование (возвращает nil при ошибке)
+  (fn base64-decode-safe (str)
+    (try
+      (base64-decode str)
+      (catch e nil)))
+
+  ; URL-safe Base64 (заменяет +/ на -_)
+  (fn base64-url-encode (str)
+    (|> (base64-encode str)
+        (str-replace "+" "-")
+        (str-replace "/" "_")
+        (str-replace "=" "")))
+
+  ; Декодировать URL-safe Base64
+  (fn base64-url-decode (str)
+    (let padded (concat str (str-repeat "=" (% (- 4 (% (str-length str) 4)) 4))))
+    (let standard (|> padded
+                      (str-replace "-" "+")
+                      (str-replace "_" "/")))
+    (base64-decode standard))
+
+  ; === Hex ===
+
+  ; Кодировать строку в hex
+  (fn hex-encode (str)
+    (hex-encode-builtin str))
+
+  ; Декодировать hex в строку
+  (fn hex-decode (str)
+    (hex-decode-builtin str))
+
+  ; Безопасное декодирование hex
+  (fn hex-decode-safe (str)
+    (try
+      (hex-decode str)
+      (catch e nil)))
+
+  ; Проверить что строка - валидный hex
+  (fn hex? (str)
+    (regex-match "^[0-9a-fA-F]*$" str))
+
+  ; Число в hex строку
+  (fn int-to-hex (n)
+    (int-to-hex-builtin n))
+
+  ; Hex строка в число
+  (fn hex-to-int (str)
+    (hex-to-int-builtin str))
+
+  ; === URL Encoding ===
+
+  ; URL-кодирование строки
+  (fn url-encode (str)
+    (url-encode-builtin str))
+
+  ; URL-декодирование строки
+  (fn url-decode (str)
+    (url-decode-builtin str))
+
+  ; Кодировать компонент URL (более строгое)
+  (fn url-encode-component (str)
+    (url-encode-component-builtin str))
+
+  ; Декодировать компонент URL
+  (fn url-decode-component (str)
+    (url-decode-builtin str))
+
+  ; Кодировать параметры запроса
+  (fn encode-query-params (params)
+    (str-join
+      (map (dict-keys params)
+           (lambda (k)
+             (concat (url-encode-component k) "=" (url-encode-component (str (dict-get params k))))))
+      "&"))
+
+  ; Декодировать параметры запроса
+  (fn decode-query-params (query)
+    (let pairs (str-split query "&"))
+    (reduce pairs (dict)
+      (lambda (d pair)
+        (let parts (str-split pair "="))
+        (if (>= (length parts) 2)
+          (dict-set d
+            (url-decode-component (first parts))
+            (url-decode-component (str-join (drop parts 1) "=")))
+          d))))
+
+  ; === HTML Entities ===
+
+  ; Экранировать HTML
+  (fn html-encode (str)
+    (|> str
+        (str-replace "&" "&amp;")
+        (str-replace "<" "&lt;")
+        (str-replace ">" "&gt;")
+        (str-replace "\"" "&quot;")
+        (str-replace "'" "&#39;")))
+
+  ; Декодировать HTML entities
+  (fn html-decode (str)
+    (|> str
+        (str-replace "&amp;" "&")
+        (str-replace "&lt;" "<")
+        (str-replace "&gt;" ">")
+        (str-replace "&quot;" "\"")
+        (str-replace "&#39;" "'")
+        (str-replace "&nbsp;" " ")))
+
+  ; === JSON ===
+
+  ; Экранировать строку для JSON
+  (fn json-escape (str)
+    (|> str
+        (str-replace "\\" "\\\\")
+        (str-replace "\"" "\\\"")
+        (str-replace "\n" "\\n")
+        (str-replace "\r" "\\r")
+        (str-replace "\t" "\\t")))
+
+  ; === Утилиты ===
+
+  ; Повторить строку n раз
+  (fn str-repeat (s n)
+    (if (<= n 0)
+      ""
+      (concat s (str-repeat s (- n 1)))))
+
+  ; Проверить что строка - валидный Base64
+  (fn base64? (str)
+    (regex-match "^[A-Za-z0-9+/]*={0,2}$" str))
+
+  ; === Экспорты ===
+  (export
+    ; Base64
+    base64-encode base64-decode base64-decode-safe
+    base64-url-encode base64-url-decode base64?
+    ; Hex
+    hex-encode hex-decode hex-decode-safe hex?
+    int-to-hex hex-to-int
+    ; URL
+    url-encode url-decode
+    url-encode-component url-decode-component
+    encode-query-params decode-query-params
+    ; HTML
+    html-encode html-decode
+    ; JSON
+    json-escape
+    ; Utils
+    str-repeat))

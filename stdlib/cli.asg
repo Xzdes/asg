@@ -1,0 +1,277 @@
+; ASG CLI Module
+; Парсинг аргументов командной строки и создание CLI приложений.
+
+(module cli
+
+  ; === Получение аргументов ===
+
+  ; Получить все аргументы командной строки
+  (fn args ()
+    (get-args))
+
+  ; Получить аргумент по индексу (0 = имя программы)
+  (fn arg (index)
+    (let all-args (args))
+    (if (< index (length all-args))
+      (nth all-args index)
+      nil))
+
+  ; Получить аргументы без имени программы
+  (fn args-rest ()
+    (drop (args) 1))
+
+  ; Количество аргументов (без имени программы)
+  (fn args-count ()
+    (- (length (args)) 1))
+
+  ; === Парсинг флагов ===
+
+  ; Проверить наличие флага (--flag или -f)
+  (fn has-flag (name)
+    (let all-args (args))
+    (or
+      (contains all-args (concat "--" name))
+      (contains all-args (concat "-" name))))
+
+  ; Получить значение опции (--name=value или --name value)
+  (fn get-option (name)
+    (let all-args (args))
+    (let long-prefix (concat "--" name))
+    (let short-prefix (concat "-" name))
+
+    ; Попробовать --name=value
+    (let with-eq (find all-args (lambda (a) (str-starts-with a (concat long-prefix "=")))))
+    (if with-eq
+      (second (str-split with-eq "="))
+      ; Попробовать --name value
+      (let idx (index-of all-args long-prefix))
+      (if (and (>= idx 0) (< (+ idx 1) (length all-args)))
+        (nth all-args (+ idx 1))
+        ; Попробовать -n value
+        (let short-idx (index-of all-args short-prefix))
+        (if (and (>= short-idx 0) (< (+ short-idx 1) (length all-args)))
+          (nth all-args (+ short-idx 1))
+          nil))))
+
+  ; Получить значение опции с дефолтом
+  (fn get-option-or (name default)
+    (let val (get-option name))
+    (if (== val nil) default val))
+
+  ; Получить опцию как число
+  (fn get-option-int (name default)
+    (let val (get-option name))
+    (if (== val nil)
+      default
+      (try (parse-int val) (catch e default))))
+
+  ; === Позиционные аргументы ===
+
+  ; Получить позиционные аргументы (не флаги)
+  (fn positional-args ()
+    (filter (args-rest)
+            (lambda (a) (not (str-starts-with a "-")))))
+
+  ; Получить позиционный аргумент по индексу
+  (fn positional (index)
+    (let pos-args (positional-args))
+    (if (< index (length pos-args))
+      (nth pos-args index)
+      nil))
+
+  ; === Декларативный парсер ===
+
+  ; Создать парсер аргументов
+  ; options: массив описаний опций
+  ; Каждая опция: (dict "name" "output" "short" "o" "type" "string" "default" "out.txt" "help" "Output file")
+  (fn make-parser (options)
+    (dict
+      "options" options
+      "parsed" nil))
+
+  ; Парсить аргументы
+  (fn parse (parser)
+    (let options (dict-get parser "options"))
+    (let result (dict))
+
+    ; Парсить каждую опцию
+    (for opt options
+      (let name (dict-get opt "name"))
+      (let short (dict-get opt "short"))
+      (let type (or-else (dict-get opt "type") "string"))
+      (let default (dict-get opt "default"))
+      (let required (or-else (dict-get opt "required") false))
+
+      ; Получить значение
+      (let value
+        (if (== type "bool")
+          (or (has-flag name) (if short (has-flag short) false))
+          (let v (get-option name))
+          (if (and (== v nil) short)
+            (get-option short)
+            v)))
+
+      ; Применить тип
+      (let typed-value
+        (if (== value nil)
+          default
+          (match type
+            "int" (parse-int value)
+            "float" (parse-float value)
+            "bool" value
+            "array" (str-split value ",")
+            _ value)))
+
+      ; Проверить required
+      (if (and required (== typed-value nil))
+        (throw (concat "Required option missing: --" name)))
+
+      (set result (dict-set result name typed-value)))
+
+    ; Добавить позиционные аргументы
+    (dict-set result "_positional" (positional-args)))
+
+  ; === Справка ===
+
+  ; Сгенерировать текст справки
+  (fn generate-help (parser program-name description)
+    (let options (dict-get parser "options"))
+    (let lines (array))
+
+    ; Заголовок
+    (set lines (append lines description))
+    (set lines (append lines ""))
+    (set lines (append lines (concat "Usage: " program-name " [OPTIONS] [ARGS]")))
+    (set lines (append lines ""))
+    (set lines (append lines "Options:"))
+
+    ; Опции
+    (for opt options
+      (let name (dict-get opt "name"))
+      (let short (dict-get opt "short"))
+      (let help (or-else (dict-get opt "help") ""))
+      (let default (dict-get opt "default"))
+      (let type (or-else (dict-get opt "type") "string"))
+
+      (let flags
+        (if short
+          (concat "  -" short ", --" name)
+          (concat "      --" name)))
+
+      (let type-hint
+        (if (!= type "bool")
+          (concat " <" type ">")
+          ""))
+
+      (let default-hint
+        (if default
+          (concat " (default: " (str default) ")")
+          ""))
+
+      (set lines (append lines
+        (concat flags type-hint "  " help default-hint))))
+
+    (set lines (append lines ""))
+    (set lines (append lines "  -h, --help  Show this help message"))
+
+    (str-join lines "\n"))
+
+  ; Показать справку и выйти
+  (fn show-help (parser program-name description)
+    (print (generate-help parser program-name description))
+    (exit 0))
+
+  ; Проверить флаг помощи
+  (fn check-help (parser program-name description)
+    (if (or (has-flag "help") (has-flag "h"))
+      (show-help parser program-name description)))
+
+  ; === Интерактивный ввод ===
+
+  ; Запросить ввод
+  (fn prompt (message)
+    (input message))
+
+  ; Запросить подтверждение (y/n)
+  (fn confirm (message)
+    (let response (str-lower (input (concat message " [y/n]: "))))
+    (or (== response "y") (== response "yes")))
+
+  ; Запросить выбор из списка
+  (fn choose (message options)
+    (print message)
+    (for i (range 0 (length options))
+      (print (concat "  " (str (+ i 1)) ") " (nth options i))))
+    (let choice (input "Enter number: "))
+    (let index (- (parse-int choice) 1))
+    (if (and (>= index 0) (< index (length options)))
+      (nth options index)
+      nil))
+
+  ; Запросить пароль (без эха)
+  (fn prompt-password (message)
+    (input-hidden message))
+
+  ; === Вывод ===
+
+  ; Вывести с цветом (ANSI)
+  (fn color (text color-name)
+    (let codes (dict
+      "red" "31"
+      "green" "32"
+      "yellow" "33"
+      "blue" "34"
+      "magenta" "35"
+      "cyan" "36"
+      "white" "37"
+      "bold" "1"
+      "dim" "2"
+      "underline" "4"))
+    (let code (dict-get codes color-name))
+    (if code
+      (concat "\x1b[" code "m" text "\x1b[0m")
+      text))
+
+  ; Вывести успех (зелёный)
+  (fn success (message)
+    (print (color (concat "✓ " message) "green")))
+
+  ; Вывести ошибку (красный)
+  (fn error (message)
+    (print (color (concat "✗ " message) "red")))
+
+  ; Вывести предупреждение (жёлтый)
+  (fn warn (message)
+    (print (color (concat "⚠ " message) "yellow")))
+
+  ; Вывести информацию (синий)
+  (fn info (message)
+    (print (color (concat "ℹ " message) "blue")))
+
+  ; === Прогресс ===
+
+  ; Простой спиннер
+  (fn spinner (message fn)
+    (print (concat message "..."))
+    (let result (fn))
+    (print (concat message "... done"))
+    result)
+
+  ; === Экспорты ===
+  (export
+    ; Args
+    args arg args-rest args-count
+    ; Flags
+    has-flag get-option get-option-or get-option-int
+    ; Positional
+    positional-args positional
+    ; Parser
+    make-parser parse
+    ; Help
+    generate-help show-help check-help
+    ; Interactive
+    prompt confirm choose prompt-password
+    ; Output
+    color success error warn info
+    ; Progress
+    spinner))

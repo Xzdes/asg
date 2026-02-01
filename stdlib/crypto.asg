@@ -1,0 +1,184 @@
+; ASG Crypto Module
+; Криптографические функции: хеширование, HMAC, случайные числа.
+
+(module crypto
+
+  ; === Хеширование ===
+
+  ; MD5 хеш (не для безопасности!)
+  (fn md5 (data)
+    (hash-md5 data))
+
+  ; SHA-1 хеш (не для безопасности!)
+  (fn sha1 (data)
+    (hash-sha1 data))
+
+  ; SHA-256 хеш
+  (fn sha256 (data)
+    (hash-sha256 data))
+
+  ; SHA-512 хеш
+  (fn sha512 (data)
+    (hash-sha512 data))
+
+  ; Универсальная функция хеширования
+  (fn hash (algorithm data)
+    (match algorithm
+      "md5" (md5 data)
+      "sha1" (sha1 data)
+      "sha256" (sha256 data)
+      "sha512" (sha512 data)
+      _ (throw (concat "Unknown hash algorithm: " algorithm))))
+
+  ; Хеш файла
+  (fn hash-file (algorithm path)
+    (hash algorithm (read-file path)))
+
+  ; === HMAC ===
+
+  ; HMAC-SHA256
+  (fn hmac-sha256 (key data)
+    (hmac-sha256-builtin key data))
+
+  ; HMAC-SHA512
+  (fn hmac-sha512 (key data)
+    (hmac-sha512-builtin key data))
+
+  ; === Случайные числа ===
+
+  ; Случайное целое число в диапазоне [min, max)
+  (fn random-int (min max)
+    (+ min (% (random-bytes-int 4) (- max min))))
+
+  ; Случайное число с плавающей точкой [0, 1)
+  (fn random-float ()
+    (/ (random-int 0 1000000) 1000000.0))
+
+  ; Случайное число в диапазоне [min, max)
+  (fn random-range (min max)
+    (+ min (* (random-float) (- max min))))
+
+  ; Случайные байты
+  (fn random-bytes (n)
+    (random-bytes-builtin n))
+
+  ; Случайная строка из hex
+  (fn random-hex (length)
+    (hex-encode (random-bytes (// (+ length 1) 2))))
+
+  ; Случайная строка Base64
+  (fn random-base64 (length)
+    (substring (base64-encode (random-bytes length)) 0 length))
+
+  ; Случайный UUID v4
+  (fn uuid-v4 ()
+    (let bytes (random-bytes 16))
+    ; Установить версию (4) и вариант (10xx)
+    (let hex (hex-encode bytes))
+    (concat
+      (substring hex 0 8) "-"
+      (substring hex 8 12) "-"
+      "4" (substring hex 13 16) "-"
+      (match (% (hex-to-int (substring hex 16 17)) 4)
+        0 "8"
+        1 "9"
+        2 "a"
+        3 "b")
+      (substring hex 17 20) "-"
+      (substring hex 20 32)))
+
+  ; === Сравнение (constant-time) ===
+
+  ; Безопасное сравнение строк (защита от timing attacks)
+  (fn secure-compare (a b)
+    (if (!= (str-length a) (str-length b))
+      false
+      (let result 0)
+      (for i (range 0 (str-length a))
+        (set result (bit-or result
+          (bit-xor (char-code-at a i) (char-code-at b i)))))
+      (== result 0)))
+
+  ; === Пароли ===
+
+  ; Хешировать пароль (простой вариант - pbkdf2-like)
+  (fn hash-password (password salt iterations)
+    (let current (concat password salt))
+    (for i (range 0 iterations)
+      (set current (sha256 current)))
+    current)
+
+  ; Сгенерировать соль
+  (fn generate-salt (length)
+    (random-hex length))
+
+  ; Создать хеш пароля с солью
+  (fn create-password-hash (password)
+    (let salt (generate-salt 32))
+    (let hash (hash-password password salt 10000))
+    (concat salt ":" hash))
+
+  ; Проверить пароль
+  (fn verify-password (password stored-hash)
+    (let parts (str-split stored-hash ":"))
+    (if (!= (length parts) 2)
+      false
+      (let salt (first parts))
+      (let expected-hash (second parts))
+      (let actual-hash (hash-password password salt 10000))
+      (secure-compare actual-hash expected-hash)))
+
+  ; === Токены ===
+
+  ; Сгенерировать API ключ
+  (fn generate-api-key ()
+    (random-hex 64))
+
+  ; Сгенерировать токен сессии
+  (fn generate-session-token ()
+    (random-base64 32))
+
+  ; Сгенерировать одноразовый код (OTP)
+  (fn generate-otp (length)
+    (let digits "0123456789")
+    (let result "")
+    (for i (range 0 length)
+      (set result (concat result
+        (substring digits (random-int 0 10) (+ 1 (random-int 0 10))))))
+    result)
+
+  ; === Утилиты ===
+
+  ; Проверить контрольную сумму файла
+  (fn verify-checksum (path expected-hash algorithm)
+    (let actual (hash-file algorithm path))
+    (secure-compare actual expected-hash))
+
+  ; Создать подпись данных
+  (fn sign (data secret)
+    (hmac-sha256 secret data))
+
+  ; Проверить подпись
+  (fn verify-signature (data signature secret)
+    (let expected (sign data secret))
+    (secure-compare signature expected))
+
+  ; === Экспорты ===
+  (export
+    ; Hashing
+    md5 sha1 sha256 sha512 hash hash-file
+    ; HMAC
+    hmac-sha256 hmac-sha512
+    ; Random
+    random-int random-float random-range
+    random-bytes random-hex random-base64
+    uuid-v4
+    ; Comparison
+    secure-compare
+    ; Passwords
+    hash-password generate-salt
+    create-password-hash verify-password
+    ; Tokens
+    generate-api-key generate-session-token generate-otp
+    ; Utils
+    verify-checksum sign verify-signature))

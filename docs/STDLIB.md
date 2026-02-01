@@ -21,6 +21,10 @@ Complete documentation of the ASG standard library modules.
 | `regex` | Regular expressions | `(import "regex")` |
 | `validation` | Data validation | `(import "validation")` |
 | `file` | Advanced file operations | `(import "file")` |
+| `encoding` | Base64, Hex, URL encoding | `(import "encoding")` |
+| `env` | Environment variables | `(import "env")` |
+| `cli` | Command-line argument parsing | `(import "cli")` |
+| `crypto` | Hashing and cryptography | `(import "crypto")` |
 
 ---
 
@@ -1281,4 +1285,311 @@ PATTERN-TIME-24H          ; HH:MM:SS
       "size" (size-human path)))))
 
 (analyze-logs "/var/log")
+```
+
+---
+
+## encoding.asg
+
+**Encoding and decoding utilities.**
+
+```lisp
+(import "encoding")
+```
+
+### Base64
+
+```lisp
+(base64-encode "hello")       ; => "aGVsbG8="
+(base64-decode "aGVsbG8=")    ; => "hello"
+(base64-decode-safe str)      ; => string or nil on error
+(base64-url-encode str)       ; URL-safe Base64
+(base64-url-decode str)       ; decode URL-safe Base64
+(base64? str)                 ; check if valid Base64
+```
+
+### Hex
+
+```lisp
+(hex-encode "hello")          ; => "68656c6c6f"
+(hex-decode "68656c6c6f")     ; => "hello"
+(hex? "48656c6c6f")           ; => true
+(int-to-hex 255)              ; => "ff"
+(hex-to-int "ff")             ; => 255
+```
+
+### URL Encoding
+
+```lisp
+(url-encode "hello world")    ; => "hello%20world"
+(url-decode "hello%20world")  ; => "hello world"
+(url-encode-component str)    ; stricter encoding
+(encode-query-params (dict "q" "search" "page" 1))
+; => "q=search&page=1"
+(decode-query-params "q=search&page=1")
+; => {"q": "search", "page": "1"}
+```
+
+### HTML Entities
+
+```lisp
+(html-encode "<div>")         ; => "&lt;div&gt;"
+(html-decode "&lt;div&gt;")   ; => "<div>"
+```
+
+### JSON Escaping
+
+```lisp
+(json-escape "line1\nline2")  ; => "line1\\nline2"
+```
+
+---
+
+## env.asg
+
+**Environment variables and system info.**
+
+```lisp
+(import "env")
+```
+
+### Basic Operations
+
+```lisp
+(get "HOME")                  ; get env var
+(get-or "PORT" "3000")        ; with default
+(set "MY_VAR" "value")        ; set env var
+(unset "MY_VAR")              ; remove env var
+(exists? "HOME")              ; check if exists
+(all)                         ; get all as dict
+```
+
+### Typed Access
+
+```lisp
+(get-int "PORT" 3000)         ; as integer
+(get-float "RATE" 1.5)        ; as float
+(get-bool "DEBUG" false)      ; as boolean (true/1/yes/on)
+(get-array "HOSTS" ",")       ; as array (split by separator)
+```
+
+### Required Variables
+
+```lisp
+(require "DATABASE_URL")      ; throws if not set
+(require-all (array "DB_HOST" "DB_PORT"))
+(check-required (array "API_KEY" "SECRET"))
+```
+
+### System Info
+
+```lisp
+(cwd)                         ; current directory
+(home)                        ; home directory
+(temp-dir)                    ; temp directory
+(user)                        ; current user
+(hostname)                    ; machine hostname
+(os)                          ; "unix" or "windows"
+(shell)                       ; path to shell
+```
+
+### PATH
+
+```lisp
+(path)                        ; PATH as array
+(path-prepend "/my/bin")      ; add to start
+(path-append "/my/bin")       ; add to end
+(path-contains "/usr/bin")    ; check if in PATH
+```
+
+### .env Files
+
+```lisp
+(load-dotenv ".env")          ; load .env file
+(load-dotenv-default)         ; load .env from current dir
+(load-profile "production")   ; load .env.production
+(current-profile)             ; APP_ENV or NODE_ENV
+(production?)                 ; is production?
+(development?)                ; is development?
+(test?)                       ; is test?
+```
+
+---
+
+## cli.asg
+
+**Command-line argument parsing.**
+
+```lisp
+(import "cli")
+```
+
+### Getting Arguments
+
+```lisp
+(args)                        ; all args including program name
+(args-rest)                   ; args without program name
+(arg 0)                       ; get arg by index
+(args-count)                  ; number of args
+```
+
+### Flags and Options
+
+```lisp
+(has-flag "verbose")          ; check --verbose or -verbose
+(get-option "output")         ; --output=file or --output file
+(get-option-or "port" "3000") ; with default
+(get-option-int "port" 3000)  ; as integer
+```
+
+### Positional Arguments
+
+```lisp
+(positional-args)             ; args that don't start with -
+(positional 0)                ; first positional arg
+```
+
+### Declarative Parser
+
+```lisp
+(let parser (make-parser (array
+  (dict "name" "output" "short" "o" "type" "string" "default" "out.txt" "help" "Output file")
+  (dict "name" "verbose" "short" "v" "type" "bool" "help" "Verbose output")
+  (dict "name" "port" "short" "p" "type" "int" "default" 3000 "help" "Port number"))))
+
+(check-help parser "myapp" "My awesome application")
+
+(let opts (parse parser))
+(dict-get opts "output")      ; => "out.txt" or user value
+(dict-get opts "verbose")     ; => true if -v or --verbose
+(dict-get opts "_positional") ; => positional args
+```
+
+### Interactive Input
+
+```lisp
+(prompt "Enter name: ")       ; read input
+(confirm "Continue?")         ; y/n question, returns bool
+(choose "Pick one:" (array "Option A" "Option B" "Option C"))
+(prompt-password "Password: ") ; hidden input
+```
+
+### Colored Output
+
+```lisp
+(success "Done!")             ; green with checkmark
+(error "Failed!")             ; red with X
+(warn "Be careful!")          ; yellow with warning
+(info "FYI...")               ; blue with info icon
+(color "text" "red")          ; custom color
+```
+
+### Example CLI App
+
+```lisp
+(import "cli")
+
+(let parser (make-parser (array
+  (dict "name" "name" "short" "n" "type" "string" "required" true "help" "Your name")
+  (dict "name" "greeting" "short" "g" "type" "string" "default" "Hello" "help" "Greeting"))))
+
+(check-help parser "greet" "A friendly greeting application")
+
+(let opts (parse parser))
+(let name (dict-get opts "name"))
+(let greeting (dict-get opts "greeting"))
+
+(success (concat greeting ", " name "!"))
+```
+
+---
+
+## crypto.asg
+
+**Cryptographic functions.**
+
+```lisp
+(import "crypto")
+```
+
+### Hashing
+
+```lisp
+(md5 "hello")                 ; MD5 hash (not for security!)
+(sha1 "hello")                ; SHA-1 hash
+(sha256 "hello")              ; SHA-256 hash
+(sha512 "hello")              ; SHA-512 hash
+(hash "sha256" "hello")       ; generic hash function
+(hash-file "sha256" "file.txt") ; hash file contents
+```
+
+### HMAC
+
+```lisp
+(hmac-sha256 "secret" "data") ; HMAC-SHA256
+(hmac-sha512 "secret" "data") ; HMAC-SHA512
+```
+
+### Random
+
+```lisp
+(random-int 1 100)            ; random int in [1, 100)
+(random-float)                ; random float in [0, 1)
+(random-range 0.0 10.0)       ; random float in range
+(random-bytes 16)             ; 16 random bytes
+(random-hex 32)               ; 32-char hex string
+(random-base64 24)            ; 24-char Base64 string
+(uuid-v4)                     ; random UUID v4
+```
+
+### Password Hashing
+
+```lisp
+(create-password-hash "mypassword")
+; => "salt:hash" string
+
+(verify-password "mypassword" stored-hash)
+; => true or false
+
+(generate-salt 32)            ; random salt
+```
+
+### Tokens
+
+```lisp
+(generate-api-key)            ; 64-char hex API key
+(generate-session-token)      ; 32-char Base64 session token
+(generate-otp 6)              ; 6-digit OTP code
+```
+
+### Security Utilities
+
+```lisp
+(secure-compare a b)          ; constant-time comparison
+(sign "data" "secret")        ; create signature
+(verify-signature "data" sig "secret") ; verify signature
+(verify-checksum "file.txt" expected-hash "sha256")
+```
+
+### Example: API Authentication
+
+```lisp
+(import "crypto")
+
+; Generate API key for new user
+(fn create-user (username)
+  (let api-key (generate-api-key))
+  (let key-hash (sha256 api-key))
+  ; Store key-hash in database
+  (dict "username" username "api_key" api-key))
+
+; Verify API request
+(fn verify-request (api-key stored-hash)
+  (let request-hash (sha256 api-key))
+  (secure-compare request-hash stored-hash))
+
+; Sign API response
+(fn sign-response (data secret)
+  (let signature (sign (json-stringify data) secret))
+  (dict-set data "signature" signature))
 ```
