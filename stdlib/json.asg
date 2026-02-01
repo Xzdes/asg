@@ -1,0 +1,182 @@
+; ASG JSON Module
+; Удобные функции для работы с JSON.
+
+(module json
+
+  ; === Конвертация в JSON ===
+
+  ; Красиво форматировать JSON с отступами
+  (fn pretty (value indent)
+    (json-encode-pretty value indent))
+
+  ; Компактный JSON (без пробелов)
+  (fn compact (value)
+    (json-encode value))
+
+  ; === Парсинг JSON ===
+
+  ; Безопасный парсинг (возвращает nil при ошибке)
+  (fn parse-safe (str)
+    (try
+      (json-decode str)
+      (catch e nil)))
+
+  ; Парсинг с дефолтным значением
+  (fn parse-or (str default)
+    (let result (parse-safe str))
+    (if (== result nil) default result))
+
+  ; === Навигация по JSON ===
+
+  ; Получить значение по пути (path — массив ключей)
+  (fn get-path (obj path)
+    (if (== (length path) 0)
+      obj
+      (do
+        (let key (first path))
+        (let rest (drop path 1))
+        (let next (if (dict-has obj key)
+                    (dict-get obj key)
+                    nil))
+        (if (== next nil)
+          nil
+          (get-path next rest)))))
+
+  ; Установить значение по пути
+  (fn set-path (obj path value)
+    (if (== (length path) 0)
+      value
+      (if (== (length path) 1)
+        (dict-set obj (first path) value)
+        (do
+          (let key (first path))
+          (let rest (drop path 1))
+          (let current (if (dict-has obj key)
+                         (dict-get obj key)
+                         (dict)))
+          (dict-set obj key (set-path current rest value))))))
+
+  ; Проверить существование пути
+  (fn has-path (obj path)
+    (!= (get-path obj path) nil))
+
+  ; === Трансформации ===
+
+  ; Обновить значение по ключу функцией
+  (fn update-key (obj key fn)
+    (if (dict-has obj key)
+      (dict-set obj key (fn (dict-get obj key)))
+      obj))
+
+  ; Переименовать ключ
+  (fn rename-key (obj old-key new-key)
+    (if (dict-has obj old-key)
+      (do
+        (let value (dict-get obj old-key))
+        (let without-old (dict-remove obj old-key))
+        (dict-set without-old new-key value))
+      obj))
+
+  ; Выбрать только указанные ключи
+  (fn pick (obj keys)
+    (reduce keys (dict)
+      (lambda (acc key)
+        (if (dict-has obj key)
+          (dict-set acc key (dict-get obj key))
+          acc))))
+
+  ; Исключить указанные ключи
+  (fn omit (obj keys)
+    (reduce (dict-keys obj) (dict)
+      (lambda (acc key)
+        (if (contains keys key)
+          acc
+          (dict-set acc key (dict-get obj key))))))
+
+  ; === Работа с массивами JSON ===
+
+  ; Найти объект по значению ключа
+  (fn find-by (arr key value)
+    (find arr (lambda (item)
+      (and (dict-has item key)
+           (== (dict-get item key) value)))))
+
+  ; Отфильтровать по значению ключа
+  (fn filter-by (arr key value)
+    (filter arr (lambda (item)
+      (and (dict-has item key)
+           (== (dict-get item key) value)))))
+
+  ; Извлечь значения ключа из массива объектов
+  (fn pluck (arr key)
+    (map arr (lambda (item)
+      (if (dict-has item key)
+        (dict-get item key)
+        nil))))
+
+  ; Группировать массив по ключу
+  (fn group-by-key (arr key)
+    (reduce arr (dict)
+      (lambda (acc item)
+        (if (dict-has item key)
+          (do
+            (let k (dict-get item key))
+            (let existing (if (dict-has acc k) (dict-get acc k) (array)))
+            (dict-set acc k (append existing item)))
+          acc))))
+
+  ; Индексировать массив по ключу (для быстрого поиска)
+  (fn index-by (arr key)
+    (reduce arr (dict)
+      (lambda (acc item)
+        (if (dict-has item key)
+          (dict-set acc (dict-get item key) item)
+          acc))))
+
+  ; === Валидация ===
+
+  ; Проверить что объект имеет все обязательные ключи
+  (fn has-keys (obj required-keys)
+    (all? required-keys (lambda (key)
+      (dict-has obj key))))
+
+  ; Получить отсутствующие ключи
+  (fn missing-keys (obj required-keys)
+    (filter required-keys (lambda (key)
+      (not (dict-has obj key)))))
+
+  ; === Слияние ===
+
+  ; Глубокое слияние двух объектов
+  (fn deep-merge (obj1 obj2)
+    (reduce (dict-keys obj2) obj1
+      (lambda (acc key)
+        (let v2 (dict-get obj2 key))
+        (if (and (dict-has acc key)
+                 (is-dict (dict-get acc key))
+                 (is-dict v2))
+          (dict-set acc key (deep-merge (dict-get acc key) v2))
+          (dict-set acc key v2)))))
+
+  ; Проверка типа
+  (fn is-dict (x)
+    (try
+      (do (dict-keys x) true)
+      (catch e false)))
+
+  ; === Экспорты ===
+  (export
+    ; Encoding
+    pretty compact
+    ; Parsing
+    parse-safe parse-or
+    ; Navigation
+    get-path set-path has-path
+    ; Transformations
+    update-key rename-key pick omit
+    ; Array operations
+    find-by filter-by pluck group-by-key index-by
+    ; Validation
+    has-keys missing-keys
+    ; Merging
+    deep-merge))

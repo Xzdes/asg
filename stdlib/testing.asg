@@ -1,0 +1,180 @@
+; ASG Testing Module
+; Простой фреймворк для тестирования.
+
+(module testing
+
+  ; === Состояние тестов ===
+
+  (let test-results (array))
+  (let current-suite "")
+  (let passed-count 0)
+  (let failed-count 0)
+
+  ; === Основные функции ===
+
+  ; Определить тестовый набор
+  (fn describe (name tests)
+    (do
+      (set current-suite name)
+      (print (concat "\n=== " name " ==="))
+      (tests)
+      (print "")))
+
+  ; Определить тест
+  (fn it (description test-fn)
+    (try
+      (do
+        (test-fn)
+        (set passed-count (+ passed-count 1))
+        (print (concat "  ✓ " description)))
+      (catch e
+        (do
+          (set failed-count (+ failed-count 1))
+          (print (concat "  ✗ " description))
+          (print (concat "    Error: " (error-message e)))))))
+
+  ; Синоним для it
+  (fn test (description test-fn)
+    (it description test-fn))
+
+  ; === Утверждения ===
+
+  ; Проверить равенство
+  (fn assert-eq (actual expected)
+    (if (!= actual expected)
+      (throw (concat "Expected " (str expected) ", got " (str actual)))))
+
+  ; Проверить неравенство
+  (fn assert-ne (actual expected)
+    (if (== actual expected)
+      (throw (concat "Expected not " (str expected) ", but got it"))))
+
+  ; Проверить истинность
+  (fn assert-true (value)
+    (if (not value)
+      (throw "Expected true, got false")))
+
+  ; Проверить ложность
+  (fn assert-false (value)
+    (if value
+      (throw "Expected false, got true")))
+
+  ; Проверить nil
+  (fn assert-nil (value)
+    (if (!= value nil)
+      (throw (concat "Expected nil, got " (str value)))))
+
+  ; Проверить не nil
+  (fn assert-not-nil (value)
+    (if (== value nil)
+      (throw "Expected non-nil value, got nil")))
+
+  ; Проверить больше
+  (fn assert-gt (a b)
+    (if (not (> a b))
+      (throw (concat "Expected " (str a) " > " (str b)))))
+
+  ; Проверить меньше
+  (fn assert-lt (a b)
+    (if (not (< a b))
+      (throw (concat "Expected " (str a) " < " (str b)))))
+
+  ; Проверить больше или равно
+  (fn assert-gte (a b)
+    (if (not (>= a b))
+      (throw (concat "Expected " (str a) " >= " (str b)))))
+
+  ; Проверить меньше или равно
+  (fn assert-lte (a b)
+    (if (not (<= a b))
+      (throw (concat "Expected " (str a) " <= " (str b)))))
+
+  ; Проверить содержание в массиве
+  (fn assert-contains (arr value)
+    (if (not (contains arr value))
+      (throw (concat "Expected array to contain " (str value)))))
+
+  ; Проверить длину
+  (fn assert-length (arr expected-len)
+    (let actual-len (length arr))
+    (if (!= actual-len expected-len)
+      (throw (concat "Expected length " (str expected-len) ", got " (str actual-len)))))
+
+  ; Проверить строку начинается с
+  (fn assert-starts-with (str prefix)
+    (if (not (str-starts-with str prefix))
+      (throw (concat "Expected string to start with '" prefix "'"))))
+
+  ; Проверить что выбрасывается ошибка
+  (fn assert-throws (fn-to-test)
+    (let result (try (do (fn-to-test) false) (catch e true)))
+    (if (not result)
+      (throw "Expected function to throw an error")))
+
+  ; Проверить что не выбрасывается ошибка
+  (fn assert-no-throw (fn-to-test)
+    (try
+      (fn-to-test)
+      (catch e
+        (throw (concat "Expected no error, but got: " (error-message e))))))
+
+  ; Проверить приблизительное равенство (для float)
+  (fn assert-close (actual expected epsilon)
+    (if (> (abs (- actual expected)) epsilon)
+      (throw (concat "Expected " (str actual) " to be within " (str epsilon) " of " (str expected)))))
+
+  ; === Результаты ===
+
+  ; Вывести итоговый отчёт
+  (fn summary ()
+    (do
+      (print "\n========================================")
+      (print (concat "Tests: " (str (+ passed-count failed-count))))
+      (print (concat "Passed: " (str passed-count)))
+      (print (concat "Failed: " (str failed-count)))
+      (print "========================================")
+      (if (== failed-count 0)
+        (print "All tests passed!")
+        (print "Some tests failed."))
+      (== failed-count 0)))
+
+  ; Сбросить счётчики
+  (fn reset ()
+    (do
+      (set passed-count 0)
+      (set failed-count 0)
+      (set test-results (array))))
+
+  ; Получить количество пройденных тестов
+  (fn get-passed ()
+    passed-count)
+
+  ; Получить количество проваленных тестов
+  (fn get-failed ()
+    failed-count)
+
+  ; === Хелперы ===
+
+  ; Вспомогательная проверка начала строки
+  (fn str-starts-with (s prefix)
+    (== (substring s 0 (str-length prefix)) prefix))
+
+  ; === Экспорты ===
+  (export
+    ; Structure
+    describe it test
+    ; Basic assertions
+    assert-eq assert-ne assert-true assert-false
+    assert-nil assert-not-nil
+    ; Comparison assertions
+    assert-gt assert-lt assert-gte assert-lte
+    ; Collection assertions
+    assert-contains assert-length
+    ; String assertions
+    assert-starts-with
+    ; Error assertions
+    assert-throws assert-no-throw
+    ; Float assertions
+    assert-close
+    ; Results
+    summary reset get-passed get-failed))

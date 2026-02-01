@@ -1,0 +1,261 @@
+; ASG DateTime Module
+; Функции для работы с датой и временем.
+
+(module datetime
+
+  ; === Константы ===
+
+  (let SECONDS_PER_MINUTE 60)
+  (let SECONDS_PER_HOUR 3600)
+  (let SECONDS_PER_DAY 86400)
+  (let SECONDS_PER_WEEK 604800)
+
+  (let DAYS_IN_MONTH (array 31 28 31 30 31 30 31 31 30 31 30 31))
+
+  (let MONTH_NAMES (array
+    "January" "February" "March" "April" "May" "June"
+    "July" "August" "September" "October" "November" "December"))
+
+  (let DAY_NAMES (array
+    "Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"))
+
+  ; === Создание дат ===
+
+  ; Создать объект даты
+  (fn date (year month day)
+    (dict "year" year "month" month "day" day "type" "date"))
+
+  ; Создать объект времени
+  (fn time (hour minute second)
+    (dict "hour" hour "minute" minute "second" second "type" "time"))
+
+  ; Создать полный datetime
+  (fn datetime (year month day hour minute second)
+    (dict
+      "year" year "month" month "day" day
+      "hour" hour "minute" minute "second" second
+      "type" "datetime"))
+
+  ; Текущее время (timestamp в секундах)
+  (fn now-timestamp ()
+    (current-time))
+
+  ; === Парсинг ===
+
+  ; Парсить ISO дату (YYYY-MM-DD)
+  (fn parse-date (str)
+    (let parts (str-split str "-"))
+    (if (== (length parts) 3)
+      (date
+        (parse-int (index parts 0))
+        (parse-int (index parts 1))
+        (parse-int (index parts 2)))
+      nil))
+
+  ; Парсить ISO время (HH:MM:SS)
+  (fn parse-time (str)
+    (let parts (str-split str ":"))
+    (if (>= (length parts) 2)
+      (time
+        (parse-int (index parts 0))
+        (parse-int (index parts 1))
+        (if (>= (length parts) 3) (parse-int (index parts 2)) 0))
+      nil))
+
+  ; Парсить ISO datetime (YYYY-MM-DDTHH:MM:SS)
+  (fn parse-datetime (str)
+    (let parts (str-split str "T"))
+    (if (== (length parts) 2)
+      (do
+        (let d (parse-date (index parts 0)))
+        (let t (parse-time (index parts 1)))
+        (if (and d t)
+          (datetime
+            (dict-get d "year") (dict-get d "month") (dict-get d "day")
+            (dict-get t "hour") (dict-get t "minute") (dict-get t "second"))
+          nil))
+      nil))
+
+  ; === Форматирование ===
+
+  ; Форматировать дату как ISO (YYYY-MM-DD)
+  (fn format-date (d)
+    (concat
+      (pad-zero (dict-get d "year") 4) "-"
+      (pad-zero (dict-get d "month") 2) "-"
+      (pad-zero (dict-get d "day") 2)))
+
+  ; Форматировать время как ISO (HH:MM:SS)
+  (fn format-time (t)
+    (concat
+      (pad-zero (dict-get t "hour") 2) ":"
+      (pad-zero (dict-get t "minute") 2) ":"
+      (pad-zero (dict-get t "second") 2)))
+
+  ; Форматировать datetime как ISO
+  (fn format-datetime (dt)
+    (concat (format-date dt) "T" (format-time dt)))
+
+  ; Форматировать как человекочитаемую строку
+  (fn format-human (dt)
+    (concat
+      (index MONTH_NAMES (- (dict-get dt "month") 1)) " "
+      (str (dict-get dt "day")) ", "
+      (str (dict-get dt "year")) " "
+      (format-time dt)))
+
+  ; Вспомогательная функция для дополнения нулями
+  (fn pad-zero (n width)
+    (let s (str n))
+    (let padding (- width (str-length s)))
+    (if (> padding 0)
+      (concat (str-repeat "0" padding) s)
+      s))
+
+  (fn str-repeat (s n)
+    (if (<= n 0) ""
+      (concat s (str-repeat s (- n 1)))))
+
+  ; === Компоненты ===
+
+  (fn year (dt) (dict-get dt "year"))
+  (fn month (dt) (dict-get dt "month"))
+  (fn day (dt) (dict-get dt "day"))
+  (fn hour (dt) (dict-get dt "hour"))
+  (fn minute (dt) (dict-get dt "minute"))
+  (fn second (dt) (dict-get dt "second"))
+
+  ; Название месяца
+  (fn month-name (dt)
+    (index MONTH_NAMES (- (month dt) 1)))
+
+  ; День недели (0 = воскресенье)
+  (fn day-of-week (dt)
+    (let y (year dt))
+    (let m (month dt))
+    (let d (day dt))
+    ; Алгоритм Зеллера
+    (if (< m 3)
+      (do
+        (set m (+ m 12))
+        (set y (- y 1))))
+    (let k (% y 100))
+    (let j (// y 100))
+    (% (+ d (// (* 13 (+ m 1)) 5) k (// k 4) (// j 4) (* 5 j)) 7))
+
+  ; Название дня недели
+  (fn day-name (dt)
+    (index DAY_NAMES (day-of-week dt)))
+
+  ; === Проверки ===
+
+  ; Високосный год?
+  (fn leap-year? (year)
+    (and (== (% year 4) 0)
+         (or (!= (% year 100) 0)
+             (== (% year 400) 0))))
+
+  ; Дней в месяце
+  (fn days-in-month (year month)
+    (if (and (== month 2) (leap-year? year))
+      29
+      (index DAYS_IN_MONTH (- month 1))))
+
+  ; Валидная дата?
+  (fn valid-date? (dt)
+    (and
+      (>= (month dt) 1) (<= (month dt) 12)
+      (>= (day dt) 1) (<= (day dt) (days-in-month (year dt) (month dt)))))
+
+  ; === Арифметика ===
+
+  ; Добавить дни
+  (fn add-days (dt n)
+    (let total-days (+ (day dt) n))
+    (let y (year dt))
+    (let m (month dt))
+    (while (> total-days (days-in-month y m))
+      (do
+        (set total-days (- total-days (days-in-month y m)))
+        (set m (+ m 1))
+        (if (> m 12)
+          (do
+            (set m 1)
+            (set y (+ y 1))))))
+    (while (< total-days 1)
+      (do
+        (set m (- m 1))
+        (if (< m 1)
+          (do
+            (set m 12)
+            (set y (- y 1))))
+        (set total-days (+ total-days (days-in-month y m)))))
+    (if (dict-has dt "hour")
+      (datetime y m total-days (hour dt) (minute dt) (second dt))
+      (date y m total-days)))
+
+  ; Добавить месяцы
+  (fn add-months (dt n)
+    (let new-month (+ (month dt) n))
+    (let new-year (year dt))
+    (while (> new-month 12)
+      (do
+        (set new-month (- new-month 12))
+        (set new-year (+ new-year 1))))
+    (while (< new-month 1)
+      (do
+        (set new-month (+ new-month 12))
+        (set new-year (- new-year 1))))
+    (let new-day (min (day dt) (days-in-month new-year new-month)))
+    (if (dict-has dt "hour")
+      (datetime new-year new-month new-day (hour dt) (minute dt) (second dt))
+      (date new-year new-month new-day)))
+
+  ; Добавить годы
+  (fn add-years (dt n)
+    (let new-year (+ (year dt) n))
+    (let new-day (min (day dt) (days-in-month new-year (month dt))))
+    (if (dict-has dt "hour")
+      (datetime new-year (month dt) new-day (hour dt) (minute dt) (second dt))
+      (date new-year (month dt) new-day)))
+
+  ; === Сравнение ===
+
+  ; Сравнить даты
+  (fn compare (dt1 dt2)
+    (if (!= (year dt1) (year dt2))
+      (- (year dt1) (year dt2))
+      (if (!= (month dt1) (month dt2))
+        (- (month dt1) (month dt2))
+        (- (day dt1) (day dt2)))))
+
+  (fn before? (dt1 dt2)
+    (< (compare dt1 dt2) 0))
+
+  (fn after? (dt1 dt2)
+    (> (compare dt1 dt2) 0))
+
+  (fn same-day? (dt1 dt2)
+    (and (== (year dt1) (year dt2))
+         (== (month dt1) (month dt2))
+         (== (day dt1) (day dt2))))
+
+  ; === Экспорты ===
+  (export
+    ; Constants
+    SECONDS_PER_MINUTE SECONDS_PER_HOUR SECONDS_PER_DAY SECONDS_PER_WEEK
+    MONTH_NAMES DAY_NAMES
+    ; Creation
+    date time datetime now-timestamp
+    ; Parsing
+    parse-date parse-time parse-datetime
+    ; Formatting
+    format-date format-time format-datetime format-human
+    ; Components
+    year month day hour minute second month-name day-of-week day-name
+    ; Checks
+    leap-year? days-in-month valid-date?
+    ; Arithmetic
+    add-days add-months add-years
+    ; Comparison
+    compare before? after? same-day?))

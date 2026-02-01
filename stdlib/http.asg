@@ -1,0 +1,159 @@
+; ASG HTTP Module
+; HTTP клиент и утилиты для веб-запросов.
+
+(module http
+
+  ; === HTTP методы ===
+
+  ; GET запрос
+  (fn get (url)
+    (http-request "GET" url (dict) ""))
+
+  ; GET с заголовками
+  (fn get-with-headers (url headers)
+    (http-request "GET" url headers ""))
+
+  ; POST запрос
+  (fn post (url body)
+    (http-request "POST" url (dict "Content-Type" "application/json") body))
+
+  ; POST с заголовками
+  (fn post-with-headers (url headers body)
+    (http-request "POST" url headers body))
+
+  ; PUT запрос
+  (fn put (url body)
+    (http-request "PUT" url (dict "Content-Type" "application/json") body))
+
+  ; DELETE запрос
+  (fn delete (url)
+    (http-request "DELETE" url (dict) ""))
+
+  ; PATCH запрос
+  (fn patch (url body)
+    (http-request "PATCH" url (dict "Content-Type" "application/json") body))
+
+  ; === JSON API ===
+
+  ; GET и парсить JSON
+  (fn get-json (url)
+    (let response (get url))
+    (if (is-ok response)
+      (json-decode (response-body response))
+      response))
+
+  ; POST JSON и получить JSON ответ
+  (fn post-json (url data)
+    (let response (post url (json-encode data)))
+    (if (is-ok response)
+      (json-decode (response-body response))
+      response))
+
+  ; === Работа с ответом ===
+
+  ; Получить тело ответа
+  (fn response-body (response)
+    (dict-get response "body"))
+
+  ; Получить статус код
+  (fn response-status (response)
+    (dict-get response "status"))
+
+  ; Получить заголовки
+  (fn response-headers (response)
+    (dict-get response "headers"))
+
+  ; Проверить успешный ответ (2xx)
+  (fn is-ok (response)
+    (let status (response-status response))
+    (and (>= status 200) (< status 300)))
+
+  ; Проверить ошибку клиента (4xx)
+  (fn is-client-error (response)
+    (let status (response-status response))
+    (and (>= status 400) (< status 500)))
+
+  ; Проверить ошибку сервера (5xx)
+  (fn is-server-error (response)
+    (let status (response-status response))
+    (>= status 500))
+
+  ; === URL утилиты ===
+
+  ; Построить query string из словаря
+  (fn build-query (params)
+    (str-join
+      (map (dict-keys params)
+        (lambda (key)
+          (concat (url-encode key) "=" (url-encode (str (dict-get params key))))))
+      "&"))
+
+  ; Добавить query параметры к URL
+  (fn with-query (url params)
+    (let query (build-query params))
+    (if (str-contains url "?")
+      (concat url "&" query)
+      (concat url "?" query)))
+
+  ; Простое URL кодирование
+  (fn url-encode (s)
+    (str-replace
+      (str-replace
+        (str-replace s " " "%20")
+        "&" "%26")
+      "=" "%3D"))
+
+  ; === Заголовки ===
+
+  ; Создать заголовки авторизации
+  (fn auth-header (token)
+    (dict "Authorization" (concat "Bearer " token)))
+
+  ; Базовая авторизация
+  (fn basic-auth-header (username password)
+    (dict "Authorization"
+      (concat "Basic " (base64-encode (concat username ":" password)))))
+
+  ; JSON заголовки
+  (fn json-headers ()
+    (dict
+      "Content-Type" "application/json"
+      "Accept" "application/json"))
+
+  ; Объединить заголовки
+  (fn merge-headers (h1 h2)
+    (dict-merge h1 h2))
+
+  ; === Retry логика ===
+
+  ; Выполнить запрос с retry
+  (fn with-retry (request-fn max-retries)
+    (with-retry-helper request-fn max-retries 0))
+
+  (fn with-retry-helper (request-fn max-retries attempt)
+    (let response (try (request-fn) (catch e (dict "error" e))))
+    (if (dict-has response "error")
+      (if (< attempt max-retries)
+        (with-retry-helper request-fn max-retries (+ attempt 1))
+        response)
+      (if (and (is-server-error response) (< attempt max-retries))
+        (with-retry-helper request-fn max-retries (+ attempt 1))
+        response)))
+
+  ; === Экспорты ===
+  (export
+    ; HTTP methods
+    get get-with-headers
+    post post-with-headers
+    put delete patch
+    ; JSON API
+    get-json post-json
+    ; Response
+    response-body response-status response-headers
+    is-ok is-client-error is-server-error
+    ; URL
+    build-query with-query url-encode
+    ; Headers
+    auth-header basic-auth-header json-headers merge-headers
+    ; Retry
+    with-retry))

@@ -14,6 +14,10 @@ Complete documentation of the ASG standard library modules.
 | `math` | Mathematical functions | `(import "math")` |
 | `string` | String utilities | `(import "string")` |
 | `io` | I/O helpers | `(import "io")` |
+| `json` | JSON manipulation utilities | `(import "json")` |
+| `http` | HTTP client functions | `(import "http")` |
+| `datetime` | Date and time operations | `(import "datetime")` |
+| `testing` | Unit testing framework | `(import "testing")` |
 
 ---
 
@@ -527,4 +531,304 @@ LN10                ; 2.302585092994046
       (append (array d) (prime-factors (// n d))))))
 
 (prime-factors 84)  ; => [2, 2, 3, 7]
+```
+
+---
+
+## json.asg
+
+**JSON manipulation utilities.**
+
+```lisp
+(import "json")
+```
+
+### Encoding
+
+```lisp
+(pretty value 2)    ; formatted JSON with 2-space indent
+(compact value)     ; minified JSON
+```
+
+### Parsing
+
+```lisp
+(parse-safe str)    ; parse JSON, returns nil on error
+(parse-or str def)  ; parse JSON with default value
+```
+
+### Navigation
+
+```lisp
+(get-path obj (array "user" "name"))  ; nested access
+(set-path obj (array "user" "age") 30) ; nested set
+(has-path obj (array "user" "email"))  ; check path exists
+```
+
+### Transformations
+
+```lisp
+(update-key obj "count" inc)      ; update value with function
+(rename-key obj "old" "new")      ; rename key
+(pick obj (array "name" "age"))   ; select only these keys
+(omit obj (array "password"))     ; exclude these keys
+```
+
+### Array Operations
+
+```lisp
+(find-by arr "id" 123)            ; find object by key value
+(filter-by arr "status" "active") ; filter by key value
+(pluck arr "name")                ; extract all values of key
+(group-by-key arr "category")     ; group by key
+(index-by arr "id")               ; create lookup dict
+```
+
+### Validation
+
+```lisp
+(has-keys obj (array "name" "email"))  ; check required keys
+(missing-keys obj (array "a" "b"))     ; get missing keys
+```
+
+### Merging
+
+```lisp
+(deep-merge obj1 obj2)            ; recursive merge
+```
+
+---
+
+## http.asg
+
+**HTTP client functions.**
+
+```lisp
+(import "http")
+```
+
+### HTTP Methods
+
+```lisp
+(get url)                   ; GET request
+(get-with-headers url hdrs) ; GET with custom headers
+(post url body)             ; POST request
+(post-with-headers url hdrs body)
+(put url body)              ; PUT request
+(delete url)                ; DELETE request
+(patch url body)            ; PATCH request
+```
+
+### JSON API
+
+```lisp
+(get-json url)              ; GET and parse JSON response
+(post-json url data)        ; POST JSON, parse response
+```
+
+### Response Handling
+
+```lisp
+(response-body resp)        ; get response body
+(response-status resp)      ; get status code
+(response-headers resp)     ; get headers
+(is-ok resp)                ; true if 2xx
+(is-client-error resp)      ; true if 4xx
+(is-server-error resp)      ; true if 5xx
+```
+
+### URL Utilities
+
+```lisp
+(build-query (dict "q" "search" "page" 1))
+; => "q=search&page=1"
+
+(with-query "https://api.example.com" (dict "limit" 10))
+; => "https://api.example.com?limit=10"
+```
+
+### Headers
+
+```lisp
+(auth-header "token123")    ; Bearer token header
+(basic-auth-header "user" "pass")  ; Basic auth
+(json-headers)              ; Content-Type: application/json
+(merge-headers h1 h2)       ; combine headers
+```
+
+### Retry Logic
+
+```lisp
+(with-retry request-fn 3)   ; retry up to 3 times on error
+```
+
+---
+
+## datetime.asg
+
+**Date and time operations.**
+
+```lisp
+(import "datetime")
+```
+
+### Creating Dates
+
+```lisp
+(date 2024 1 15)            ; create date
+(time 14 30 0)              ; create time
+(datetime 2024 1 15 14 30 0) ; create datetime
+(now-timestamp)             ; current Unix timestamp
+```
+
+### Parsing
+
+```lisp
+(parse-date "2024-01-15")   ; parse ISO date
+(parse-time "14:30:00")     ; parse ISO time
+(parse-datetime "2024-01-15T14:30:00") ; parse ISO datetime
+```
+
+### Formatting
+
+```lisp
+(format-date dt)            ; "2024-01-15"
+(format-time dt)            ; "14:30:00"
+(format-datetime dt)        ; "2024-01-15T14:30:00"
+(format-human dt)           ; "January 15, 2024 14:30:00"
+```
+
+### Components
+
+```lisp
+(year dt) (month dt) (day dt)
+(hour dt) (minute dt) (second dt)
+(month-name dt)             ; "January"
+(day-of-week dt)            ; 0-6 (Sunday = 0)
+(day-name dt)               ; "Monday"
+```
+
+### Checks
+
+```lisp
+(leap-year? 2024)           ; true
+(days-in-month 2024 2)      ; 29
+(valid-date? dt)            ; check valid
+```
+
+### Arithmetic
+
+```lisp
+(add-days dt 7)             ; add 7 days
+(add-months dt 1)           ; add 1 month
+(add-years dt 1)            ; add 1 year
+```
+
+### Comparison
+
+```lisp
+(compare dt1 dt2)           ; -1, 0, or 1
+(before? dt1 dt2)           ; true if dt1 < dt2
+(after? dt1 dt2)            ; true if dt1 > dt2
+(same-day? dt1 dt2)         ; true if same date
+```
+
+---
+
+## testing.asg
+
+**Unit testing framework.**
+
+```lisp
+(import "testing")
+```
+
+### Test Structure
+
+```lisp
+(describe "Math operations" (lambda ()
+  (it "adds numbers" (lambda ()
+    (assert-eq (+ 1 2) 3)))
+
+  (it "multiplies numbers" (lambda ()
+    (assert-eq (* 3 4) 12)))))
+
+(summary)  ; print results
+```
+
+### Basic Assertions
+
+```lisp
+(assert-eq actual expected)   ; equality
+(assert-ne actual expected)   ; inequality
+(assert-true value)           ; truthy
+(assert-false value)          ; falsy
+(assert-nil value)            ; nil check
+(assert-not-nil value)        ; not nil
+```
+
+### Comparison Assertions
+
+```lisp
+(assert-gt a b)               ; a > b
+(assert-lt a b)               ; a < b
+(assert-gte a b)              ; a >= b
+(assert-lte a b)              ; a <= b
+```
+
+### Collection Assertions
+
+```lisp
+(assert-contains arr value)   ; array contains
+(assert-length arr 3)         ; array length
+```
+
+### String Assertions
+
+```lisp
+(assert-starts-with str "prefix")
+```
+
+### Error Assertions
+
+```lisp
+(assert-throws (lambda () (throw "error")))
+(assert-no-throw (lambda () (+ 1 2)))
+```
+
+### Float Assertions
+
+```lisp
+(assert-close 3.14 PI 0.01)   ; within epsilon
+```
+
+### Results
+
+```lisp
+(summary)                     ; print test report
+(reset)                       ; reset counters
+(get-passed)                  ; passed count
+(get-failed)                  ; failed count
+```
+
+### Example Test Suite
+
+```lisp
+(import "testing")
+
+(describe "Array operations" (lambda ()
+  (it "creates arrays" (lambda ()
+    (let arr (array 1 2 3))
+    (assert-length arr 3)
+    (assert-eq (first arr) 1)))
+
+  (it "maps arrays" (lambda ()
+    (let result (map (array 1 2 3) (lambda (x) (* x 2))))
+    (assert-eq result (array 2 4 6))))
+
+  (it "filters arrays" (lambda ()
+    (let result (filter (array 1 2 3 4 5) (lambda (x) (> x 2))))
+    (assert-eq (length result) 3)))))
+
+(summary)
 ```
