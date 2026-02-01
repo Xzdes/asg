@@ -87,6 +87,12 @@ cargo install asg-lsp
 
 ## Release Notes
 
+### 1.1.0
+- Updated for ASG v1.1.0
+- Improved LSP integration
+- Better diagnostics and error messages
+- Extended stdlib documentation support
+
 ### 1.0.0
 - Initial release
 - Syntax highlighting
