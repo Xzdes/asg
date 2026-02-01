@@ -1,0 +1,537 @@
+; =============================================================================
+; ASG Examples for LLM Training
+; =============================================================================
+; This file contains comprehensive examples covering all ASG language features.
+; Use these patterns to generate correct ASG code.
+
+; =============================================================================
+; SECTION 1: Literals and Basic Types
+; =============================================================================
+
+; Integer literals
+42
+-17
+0
+
+; Float literals
+3.14
+-2.5
+0.0
+
+; Boolean literals
+true
+false
+
+; String literals
+"hello"
+"Hello, World!"
+"Line 1\nLine 2"
+
+; Unit (empty value)
+()
+
+; =============================================================================
+; SECTION 2: Arithmetic Operations
+; =============================================================================
+
+; Addition (variadic - can take 2+ arguments)
+(+ 1 2)           ; => 3
+(+ 1 2 3 4 5)     ; => 15
+
+; Subtraction
+(- 10 3)          ; => 7
+(- 5)             ; => -5 (negation)
+
+; Multiplication (variadic)
+(* 2 3)           ; => 6
+(* 2 3 4)         ; => 24
+
+; Division (returns float)
+(/ 10 4)          ; => 2.5
+
+; Integer division
+(// 10 3)         ; => 3
+
+; Modulo
+(% 17 5)          ; => 2
+
+; Nested arithmetic
+(+ (* 2 3) (* 4 5))   ; => 26
+
+; =============================================================================
+; SECTION 3: Comparison and Logic
+; =============================================================================
+
+; Comparison operators
+(== 1 1)          ; => true
+(!= 1 2)          ; => true
+(< 5 10)          ; => true
+(<= 5 5)          ; => true
+(> 10 5)          ; => true
+(>= 10 10)        ; => true
+
+; Logical operators
+(and true true)   ; => true
+(and true false)  ; => false
+(or false true)   ; => true
+(or false false)  ; => false
+(not true)        ; => false
+(not false)       ; => true
+
+; Combined conditions
+(and (> 5 3) (< 5 10))    ; => true
+(or (< 5 3) (> 5 10))     ; => false
+
+; =============================================================================
+; SECTION 4: Variables
+; =============================================================================
+
+; Variable declaration
+(let x 42)
+(let name "Alice")
+(let pi 3.14159)
+
+; Using variables
+(let a 10)
+(let b 20)
+(+ a b)           ; => 30
+
+; Variable mutation
+(let counter 0)
+(set counter 1)
+(set counter (+ counter 1))
+
+; Destructuring arrays
+(let arr (array 1 2 3))
+(let (a b c) arr)
+; Now a=1, b=2, c=3
+
+; =============================================================================
+; SECTION 5: Control Flow
+; =============================================================================
+
+; If-then-else
+(if (> 10 5) "greater" "not greater")
+
+; If without else (returns unit if false)
+(if (> 10 5) "yes")
+
+; Nested conditionals
+(let n 15)
+(if (< n 0)
+  "negative"
+  (if (== n 0)
+    "zero"
+    "positive"))
+
+; Do block (sequence of expressions)
+(do
+  (print "step 1")
+  (print "step 2")
+  42)             ; returns last value: 42
+
+; While loop
+(let i 0)
+(while (< i 5)
+  (do
+    (print i)
+    (set i (+ i 1))))
+
+; For loop
+(for x (range 0 5)
+  (print x))
+
+; Loop with break
+(let i 0)
+(loop
+  (do
+    (if (>= i 10) (break))
+    (print i)
+    (set i (+ i 1))))
+
+; Loop with continue
+(for i (range 0 10)
+  (do
+    (if (== (% i 2) 0) (continue))
+    (print i)))   ; prints only odd numbers
+
+; =============================================================================
+; SECTION 6: Functions
+; =============================================================================
+
+; Simple function
+(fn square (x)
+  (* x x))
+
+(square 5)        ; => 25
+
+; Function with multiple parameters
+(fn add (a b)
+  (+ a b))
+
+(add 10 20)       ; => 30
+
+; Recursive function
+(fn factorial (n)
+  (if (<= n 1)
+    1
+    (* n (factorial (- n 1)))))
+
+(factorial 5)     ; => 120
+
+; Fibonacci
+(fn fib (n)
+  (if (<= n 1)
+    n
+    (+ (fib (- n 1)) (fib (- n 2)))))
+
+(fib 10)          ; => 55
+
+; Function returning function (closure)
+(fn make-adder (x)
+  (lambda (y) (+ x y)))
+
+(let add5 (make-adder 5))
+(add5 10)         ; => 15
+
+; Lambda (anonymous function)
+(let double (lambda (x) (* x 2)))
+(double 21)       ; => 42
+
+; =============================================================================
+; SECTION 7: Arrays
+; =============================================================================
+
+; Creating arrays
+(array 1 2 3 4 5)
+(array "a" "b" "c")
+(array)           ; empty array
+
+; Accessing elements
+(let arr (array 10 20 30 40 50))
+(index arr 0)     ; => 10
+(index arr 2)     ; => 30
+(first arr)       ; => 10
+(last arr)        ; => 50
+(length arr)      ; => 5
+
+; Higher-order functions
+(map (array 1 2 3) (lambda (x) (* x 2)))
+; => [2, 4, 6]
+
+(filter (array 1 2 3 4 5) (lambda (x) (> x 2)))
+; => [3, 4, 5]
+
+(reduce (array 1 2 3 4) 0 (lambda (acc x) (+ acc x)))
+; => 10
+
+; Array operations
+(reverse (array 1 2 3))           ; => [3, 2, 1]
+(sort (array 3 1 4 1 5))          ; => [1, 1, 3, 4, 5]
+(take (array 1 2 3 4 5) 3)        ; => [1, 2, 3]
+(drop (array 1 2 3 4 5) 2)        ; => [3, 4, 5]
+(slice (array 1 2 3 4 5) 1 4)     ; => [2, 3, 4]
+(append (array 1 2 3) 4)          ; => [1, 2, 3, 4]
+(array-concat (array 1 2) (array 3 4))  ; => [1, 2, 3, 4]
+(contains (array 1 2 3) 2)        ; => true
+(sum (array 1 2 3 4 5))           ; => 15
+
+; Range
+(range 0 5)       ; => [0, 1, 2, 3, 4]
+(range 1 10)      ; => [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+; =============================================================================
+; SECTION 8: Pipeline Operator
+; =============================================================================
+
+; Basic pipeline
+(|> 5 square)     ; => 25
+
+; Multi-step pipeline
+(|> (array 1 2 3 4 5)
+    (filter (lambda (x) (> x 2)))
+    (map (lambda (x) (* x 2)))
+    (reduce 0 +))
+; => 24
+
+; Data transformation pipeline
+(let data (array
+  (dict "name" "Alice" "age" 30)
+  (dict "name" "Bob" "age" 25)
+  (dict "name" "Carol" "age" 35)))
+
+(|> data
+    (filter (lambda (u) (> (dict-get u "age") 27)))
+    (map (lambda (u) (dict-get u "name"))))
+; => ["Alice", "Carol"]
+
+; =============================================================================
+; SECTION 9: Dictionaries
+; =============================================================================
+
+; Creating dictionaries
+(dict "name" "Alice" "age" 30)
+
+; Operations
+(let person (dict "name" "Alice" "age" 30))
+(dict-get person "name")          ; => "Alice"
+(dict-set person "age" 31)        ; => new dict with age=31
+(dict-has person "name")          ; => true
+(dict-keys person)                ; => ["name", "age"]
+(dict-values person)              ; => ["Alice", 30]
+(dict-remove person "age")        ; => dict without "age"
+(dict-size person)                ; => 2
+
+; Merge dictionaries
+(let d1 (dict "a" 1 "b" 2))
+(let d2 (dict "b" 20 "c" 3))
+(dict-merge d1 d2)                ; => {"a": 1, "b": 20, "c": 3}
+
+; =============================================================================
+; SECTION 10: Strings
+; =============================================================================
+
+(concat "Hello, " "World!")       ; => "Hello, World!"
+(str-length "hello")              ; => 5
+(substring "hello" 1 4)           ; => "ell"
+(str-split "a,b,c" ",")           ; => ["a", "b", "c"]
+(str-join (array "a" "b" "c") "-") ; => "a-b-c"
+(str-contains "hello" "ell")      ; => true
+(str-replace "hello" "l" "L")     ; => "heLLo"
+(str-trim "  hello  ")            ; => "hello"
+(str-upper "hello")               ; => "HELLO"
+(str-lower "HELLO")               ; => "hello"
+(str 42)                          ; => "42"
+(parse-int "42")                  ; => 42
+(parse-float "3.14")              ; => 3.14
+
+; =============================================================================
+; SECTION 11: Math Functions
+; =============================================================================
+
+(sqrt 16)         ; => 4.0
+(pow 2 10)        ; => 1024.0
+(abs -5)          ; => 5
+(floor 3.7)       ; => 3
+(ceil 3.2)        ; => 4
+(round 3.5)       ; => 4
+(min 3 7)         ; => 3
+(max 3 7)         ; => 7
+(sin 0)           ; => 0.0
+(cos 0)           ; => 1.0
+PI                ; => 3.14159...
+E                 ; => 2.71828...
+
+; =============================================================================
+; SECTION 12: Pattern Matching
+; =============================================================================
+
+(fn describe-number (n)
+  (match n
+    0 "zero"
+    1 "one"
+    2 "two"
+    _ "other"))
+
+(describe-number 0)   ; => "zero"
+(describe-number 5)   ; => "other"
+
+; Match with expressions
+(fn categorize (n)
+  (match true
+    (< n 0) "negative"
+    (== n 0) "zero"
+    (< n 10) "small"
+    (< n 100) "medium"
+    _ "large"))
+
+; =============================================================================
+; SECTION 13: Error Handling
+; =============================================================================
+
+; Try-catch
+(try
+  (/ 10 0)
+  (catch e
+    (print "Error occurred")
+    0))
+
+; Throw
+(fn safe-divide (a b)
+  (if (== b 0)
+    (throw "Division by zero")
+    (/ a b)))
+
+; Check for errors
+(let result (try (/ 1 0) (catch e e)))
+(is-error result)     ; => true
+(error-message result) ; => error description
+
+; =============================================================================
+; SECTION 14: Lazy Sequences
+; =============================================================================
+
+; Infinite sequence
+(let naturals (iterate (lambda (x) (+ x 1)) 0))
+
+; Take from lazy sequence
+(collect (take-lazy 10 naturals))
+; => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+; Lazy operations
+(|> (lazy-range 1 1000000)
+    (lazy-filter (lambda (x) (== (% x 2) 0)))
+    (lazy-map (lambda (x) (* x x)))
+    (take-lazy 5)
+    collect)
+; => [4, 16, 36, 64, 100]
+
+; Repeat and cycle
+(collect (take-lazy 5 (repeat 42)))
+; => [42, 42, 42, 42, 42]
+
+(collect (take-lazy 6 (cycle (array 1 2 3))))
+; => [1, 2, 3, 1, 2, 3]
+
+; =============================================================================
+; SECTION 15: I/O
+; =============================================================================
+
+; Output
+(print "Hello, World!")
+(print (array 1 2 3))
+(print (dict "a" 1))
+
+; Input
+(let name (input "Enter name: "))
+(let age (input-int "Enter age: "))
+
+; File I/O
+(write-file "test.txt" "Hello, File!")
+(let content (read-file "test.txt"))
+(append-file "test.txt" "\nMore content")
+(file-exists "test.txt")          ; => true
+
+; =============================================================================
+; SECTION 16: Records
+; =============================================================================
+
+(let person (record name "Alice" age 30))
+(field person name)               ; => "Alice"
+(field person age)                ; => 30
+
+; =============================================================================
+; SECTION 17: Modules
+; =============================================================================
+
+; Define module
+(module math-utils
+  (export square cube double)
+
+  (fn square (x) (* x x))
+  (fn cube (x) (* x x x))
+  (fn double (x) (* x 2)))
+
+; Import module
+(import "math-utils")
+(square 5)        ; => 25
+
+; Import with alias
+(import "math-utils" :as m)
+; Use as (m.square 5)
+
+; Selective import
+(import "math-utils" :only (square))
+
+; =============================================================================
+; SECTION 18: Functional Patterns
+; =============================================================================
+
+; Compose functions
+(let inc (lambda (x) (+ x 1)))
+(let double (lambda (x) (* x 2)))
+(let inc-then-double (compose double inc))
+(inc-then-double 5)   ; => 12
+
+; Closure for state
+(fn make-counter ()
+  (do
+    (let count 0)
+    (lambda ()
+      (do
+        (set count (+ count 1))
+        count))))
+
+(let counter (make-counter))
+(counter)             ; => 1
+(counter)             ; => 2
+(counter)             ; => 3
+
+; =============================================================================
+; SECTION 19: Complete Examples
+; =============================================================================
+
+; Example 1: FizzBuzz
+(for i (range 1 101)
+  (print
+    (if (== (% i 15) 0) "FizzBuzz"
+      (if (== (% i 3) 0) "Fizz"
+        (if (== (% i 5) 0) "Buzz"
+          i)))))
+
+; Example 2: Prime checker
+(fn prime? (n)
+  (if (< n 2)
+    false
+    (do
+      (let i 2)
+      (let is-prime true)
+      (while (and is-prime (<= (* i i) n))
+        (do
+          (if (== (% n i) 0)
+            (set is-prime false))
+          (set i (+ i 1))))
+      is-prime)))
+
+; Example 3: Quick sort
+(fn quicksort (arr)
+  (if (<= (length arr) 1)
+    arr
+    (do
+      (let pivot (first arr))
+      (let rest (drop arr 1))
+      (let lesser (filter rest (lambda (x) (< x pivot))))
+      (let greater (filter rest (lambda (x) (>= x pivot))))
+      (array-concat
+        (array-concat (quicksort lesser) (array pivot))
+        (quicksort greater)))))
+
+; Example 4: Binary search
+(fn binary-search (arr target)
+  (do
+    (let low 0)
+    (let high (- (length arr) 1))
+    (let result -1)
+    (while (and (<= low high) (== result -1))
+      (do
+        (let mid (// (+ low high) 2))
+        (let val (index arr mid))
+        (if (== val target)
+          (set result mid)
+          (if (< val target)
+            (set low (+ mid 1))
+            (set high (- mid 1))))))
+    result))
+
+; Example 5: Word frequency counter
+(fn word-frequencies (text)
+  (|> (str-split text " ")
+      (map str-lower)
+      (reduce (dict)
+        (lambda (d word)
+          (dict-set d word
+            (+ 1 (if (dict-has d word) (dict-get d word) 0)))))))
+
+; =============================================================================
+; END OF EXAMPLES
+; =============================================================================

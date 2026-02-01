@@ -243,16 +243,167 @@ x   ; 10
 
 ---
 
-## Functions (Coming Soon)
+## Functions
 
-Function definitions and lambda expressions are parsed but parameter handling
-is still in development. For now, use variables and loops:
+### Defining Functions
 
 ```lisp
-; Instead of (fn square (x) (* x x))
-; Use direct computation:
-(let x 5)
-(* x x)   ; 25
+(fn square (x)
+  (* x x))
+
+(square 5)      ; => 25
+(square 12)     ; => 144
+```
+
+### Multiple Parameters
+
+```lisp
+(fn add (a b)
+  (+ a b))
+
+(fn greet (name)
+  (print (concat "Hello, " name "!")))
+
+(add 10 20)     ; => 30
+(greet "Alice") ; prints: Hello, Alice!
+```
+
+### Recursive Functions
+
+```lisp
+(fn factorial (n)
+  (if (<= n 1)
+    1
+    (* n (factorial (- n 1)))))
+
+(factorial 5)   ; => 120
+(factorial 10)  ; => 3628800
+```
+
+### Lambda (Anonymous Functions)
+
+```lisp
+(let double (lambda (x) (* x 2)))
+(double 21)     ; => 42
+
+; Use with higher-order functions
+(map (array 1 2 3) (lambda (x) (* x x)))
+; => [1, 4, 9]
+```
+
+### Higher-Order Functions
+
+```lisp
+; map - transform each element
+(map (array 1 2 3) (lambda (x) (* x 2)))
+; => [2, 4, 6]
+
+; filter - keep elements matching predicate
+(filter (array 1 2 3 4 5) (lambda (x) (> x 2)))
+; => [3, 4, 5]
+
+; reduce - fold array to single value
+(reduce (array 1 2 3 4) 0 (lambda (acc x) (+ acc x)))
+; => 10
+```
+
+### Pipeline Operator
+
+```lisp
+(|> (array 1 2 3 4 5)
+    (filter (lambda (x) (> x 2)))
+    (map (lambda (x) (* x 2)))
+    (reduce 0 +))
+; => 24 (3*2 + 4*2 + 5*2)
+```
+
+---
+
+## Pattern Matching
+
+Use `match` to dispatch on values:
+
+```lisp
+(fn describe (n)
+  (match n
+    0 "zero"
+    1 "one"
+    2 "two"
+    _ "many"))
+
+(describe 0)    ; => "zero"
+(describe 1)    ; => "one"
+(describe 42)   ; => "many"
+```
+
+---
+
+## Error Handling
+
+### Try/Catch
+
+```lisp
+(try
+  (/ 10 0)
+  (catch e
+    (print "Error occurred!")
+    0))
+```
+
+### Throw Errors
+
+```lisp
+(fn divide (a b)
+  (if (== b 0)
+    (throw "Division by zero!")
+    (/ a b)))
+
+(try
+  (divide 10 0)
+  (catch e
+    (print (error-message e))
+    0))
+```
+
+### Check for Errors
+
+```lisp
+(let result (try (/ 1 0) (catch e e)))
+(if (is-error result)
+  (print "Got an error")
+  (print result))
+```
+
+---
+
+## Dictionaries
+
+### Creating Dictionaries
+
+```lisp
+(let person (dict "name" "Alice" "age" 30))
+```
+
+### Accessing Values
+
+```lisp
+(dict-get person "name")    ; => "Alice"
+(dict-get person "age")     ; => 30
+```
+
+### Modifying Dictionaries
+
+```lisp
+(let updated (dict-set person "age" 31))
+(dict-get updated "age")    ; => 31
+```
+
+### Dictionary Operations
+
+```lisp
+(dict-has person "name")    ; => true
+(dict-keys person)          ; => ["name", "age"]
+(dict-values person)        ; => ["Alice", 30]
 ```
 
 ---
@@ -288,6 +439,8 @@ Comments start with `;` and continue to the end of the line:
 | `:quit` or `:q` | Exit REPL |
 | `:ast <expr>` | Show AST for expression |
 | `:type <expr>` | Show inferred type |
+| `:env` | Show defined variables |
+| `:funcs` | Show defined functions |
 | `:clear` | Clear screen |
 
 ---
@@ -316,9 +469,20 @@ result  ; 120 (5!)
 
 ## Next Steps
 
+### Documentation
+- [CHEATSHEET.md](CHEATSHEET.md) - Quick reference card
+- [BUILTIN_FUNCTIONS.md](BUILTIN_FUNCTIONS.md) - Complete function reference
+- [PATTERNS.md](PATTERNS.md) - Code patterns and idioms
+- [STDLIB.md](STDLIB.md) - Standard library documentation
+- [LANGUAGE_SPEC.md](LANGUAGE_SPEC.md) - Formal language specification
+
+### Examples
 - Explore the examples in `examples/` directory
-- Read the architecture docs in `docs/`
+- Start with `examples/basics.asg` and `examples/demo.asg`
+
+### Advanced Features
 - Try the LLVM backend: `cargo build --features llvm_backend`
+- Try WASM compilation: `cargo build --features wasm_backend`
 - Try formal proofs with Z3: `cargo build --features proofs`
 
 Happy coding with ASG!
