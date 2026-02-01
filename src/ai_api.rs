@@ -32,7 +32,8 @@ pub fn save_asg_to_file(asg: &ASG, path: &str) -> ASGResult<()> {
 
 /// Загрузить ASG из файла JSON.
 pub fn load_asg_from_file(path: &str) -> ASGResult<ASG> {
-    let json = std::fs::read_to_string(path)
-        .map_err(|e| ASGError::SerializationError(format!("Failed to read ASG from file: {}", e)))?;
+    let json = std::fs::read_to_string(path).map_err(|e| {
+        ASGError::SerializationError(format!("Failed to read ASG from file: {}", e))
+    })?;
     import_asg_from_json(&json)
 }

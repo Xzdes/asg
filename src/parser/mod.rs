@@ -65,7 +65,7 @@ use crate::error::ASGResult;
 ///
 /// # Возвращает
 ///
-/// Кортеж (ASG, Vec<NodeID>) — ASG и список ID корневых узлов (top-level выражений).
+/// Кортеж `(ASG, Vec<NodeID>)` — ASG и список ID корневых узлов (top-level выражений).
 ///
 /// # Пример
 ///

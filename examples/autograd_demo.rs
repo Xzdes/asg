@@ -1,6 +1,6 @@
-use asg_lang::asg::{ASG, Edge, Node};
-use asg_lang::nodecodes::{NodeType, EdgeType};
+use asg_lang::asg::{Edge, Node, ASG};
 use asg_lang::interpreter::{Interpreter, Value};
+use asg_lang::nodecodes::{EdgeType, NodeType};
 
 fn main() {
     println!("--- ASG: Autograd Demo ---");
@@ -32,8 +32,16 @@ fn main() {
         node_type: NodeType::TensorAdd,
         payload: None,
         edges: vec![
-            Edge { edge_type: EdgeType::ApplicationArgument, target_node_id: 1, payload: None },
-            Edge { edge_type: EdgeType::ApplicationArgument, target_node_id: 2, payload: None },
+            Edge {
+                edge_type: EdgeType::ApplicationArgument,
+                target_node_id: 1,
+                payload: None,
+            },
+            Edge {
+                edge_type: EdgeType::ApplicationArgument,
+                target_node_id: 2,
+                payload: None,
+            },
         ],
         span: None,
     });

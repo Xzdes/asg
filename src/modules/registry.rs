@@ -3,8 +3,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use crate::asg::{ASG, NodeID};
 use super::ExportedDef;
+use crate::asg::{NodeID, ASG};
 
 /// Загруженный модуль.
 #[derive(Debug, Clone)]

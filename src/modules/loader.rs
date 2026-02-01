@@ -6,10 +6,10 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::asg::{ASG, NodeID};
+use crate::asg::{NodeID, ASG};
 use crate::error::{ASGError, ASGResult};
 use crate::interpreter::Value;
-use crate::nodecodes::{NodeType, EdgeType};
+use crate::nodecodes::{EdgeType, NodeType};
 use crate::parser;
 
 use super::{ExportedDef, Module, ModuleRegistry, ModuleResolver};
@@ -59,9 +59,10 @@ impl ModuleLoader {
     pub fn load(&mut self, module_name: &str) -> ASGResult<&Module> {
         // Проверяем, не загружен ли уже
         if self.registry.is_loaded(module_name) {
-            return self.registry.get(module_name).ok_or_else(|| {
-                ASGError::ModuleNotFound(module_name.to_string())
-            });
+            return self
+                .registry
+                .get(module_name)
+                .ok_or_else(|| ASGError::ModuleNotFound(module_name.to_string()));
         }
 
         // Проверяем циклические импорты
@@ -84,17 +85,16 @@ impl ModuleLoader {
         // Убираем из загружаемых
         self.loading.remove(module_name);
 
-        self.registry.get(module_name).ok_or_else(|| {
-            ASGError::ModuleNotFound(module_name.to_string())
-        })
+        self.registry
+            .get(module_name)
+            .ok_or_else(|| ASGError::ModuleNotFound(module_name.to_string()))
     }
 
     /// Загрузить модуль из файла.
     pub fn load_from_path(&mut self, module_name: &str, path: &Path) -> ASGResult<Module> {
         // Читаем файл
-        let source = fs::read_to_string(path).map_err(|e| {
-            ASGError::IoError(format!("Failed to read {}: {}", path.display(), e))
-        })?;
+        let source = fs::read_to_string(path)
+            .map_err(|e| ASGError::IoError(format!("Failed to read {}: {}", path.display(), e)))?;
 
         // Парсим
         let (asg, root_ids) = parser::parse(&source).map_err(|e| {
@@ -102,7 +102,8 @@ impl ModuleLoader {
         })?;
 
         // Создаём модуль
-        let mut module = Module::from_file(module_name.to_string(), path.to_path_buf(), asg.clone());
+        let mut module =
+            Module::from_file(module_name.to_string(), path.to_path_buf(), asg.clone());
 
         // Обрабатываем объявления модуля
         self.process_module_declarations(&mut module, &asg, &root_ids)?;
@@ -118,9 +119,9 @@ impl ModuleLoader {
         root_ids: &[NodeID],
     ) -> ASGResult<()> {
         for &node_id in root_ids {
-            let node = asg.find_node(node_id).ok_or_else(|| {
-                ASGError::NodeNotFound(node_id)
-            })?;
+            let node = asg
+                .find_node(node_id)
+                .ok_or_else(|| ASGError::NodeNotFound(node_id))?;
 
             match node.node_type {
                 // Объявление модуля: (module name ...)
@@ -164,9 +165,9 @@ impl ModuleLoader {
         asg: &ASG,
         node_id: NodeID,
     ) -> ASGResult<()> {
-        let node = asg.find_node(node_id).ok_or_else(|| {
-            ASGError::NodeNotFound(node_id)
-        })?;
+        let node = asg
+            .find_node(node_id)
+            .ok_or_else(|| ASGError::NodeNotFound(node_id))?;
 
         // Имя модуля из payload
         if let Some(ref payload) = node.payload {
@@ -178,11 +179,7 @@ impl ModuleLoader {
         for edge in &node.edges {
             if edge.edge_type == EdgeType::ModuleContent {
                 // Рекурсивно обрабатываем содержимое
-                self.process_module_declarations(
-                    module,
-                    asg,
-                    &[edge.target_node_id],
-                )?;
+                self.process_module_declarations(module, asg, &[edge.target_node_id])?;
             }
         }
 
@@ -196,9 +193,9 @@ impl ModuleLoader {
         asg: &ASG,
         node_id: NodeID,
     ) -> ASGResult<()> {
-        let node = asg.find_node(node_id).ok_or_else(|| {
-            ASGError::NodeNotFound(node_id)
-        })?;
+        let node = asg
+            .find_node(node_id)
+            .ok_or_else(|| ASGError::NodeNotFound(node_id))?;
 
         let mut exports = Vec::new();
 
@@ -235,16 +232,16 @@ impl ModuleLoader {
         asg: &ASG,
         node_id: NodeID,
     ) -> ASGResult<()> {
-        let node = asg.find_node(node_id).ok_or_else(|| {
-            ASGError::NodeNotFound(node_id)
-        })?;
+        let node = asg
+            .find_node(node_id)
+            .ok_or_else(|| ASGError::NodeNotFound(node_id))?;
 
         // Получаем имя импортируемого модуля
-        let import_name = node.payload.as_ref().map(|p| {
-            String::from_utf8_lossy(p).to_string()
-        }).ok_or_else(|| {
-            ASGError::ModuleError("Import missing module name".to_string())
-        })?;
+        let import_name = node
+            .payload
+            .as_ref()
+            .map(|p| String::from_utf8_lossy(p).to_string())
+            .ok_or_else(|| ASGError::ModuleError("Import missing module name".to_string()))?;
 
         // Загружаем импортируемый модуль (рекурсивно)
         self.load(&import_name)?;
@@ -259,16 +256,16 @@ impl ModuleLoader {
         asg: &ASG,
         node_id: NodeID,
     ) -> ASGResult<()> {
-        let node = asg.find_node(node_id).ok_or_else(|| {
-            ASGError::NodeNotFound(node_id)
-        })?;
+        let node = asg
+            .find_node(node_id)
+            .ok_or_else(|| ASGError::NodeNotFound(node_id))?;
 
         // Получаем имя функции
-        let name = node.payload.as_ref().map(|p| {
-            String::from_utf8_lossy(p).to_string()
-        }).ok_or_else(|| {
-            ASGError::ModuleError("Function missing name".to_string())
-        })?;
+        let name = node
+            .payload
+            .as_ref()
+            .map(|p| String::from_utf8_lossy(p).to_string())
+            .ok_or_else(|| ASGError::ModuleError("Function missing name".to_string()))?;
 
         // Получаем параметры и тело
         let mut params = Vec::new();
@@ -290,19 +287,21 @@ impl ModuleLoader {
             }
         }
 
-        let body_id = body_id.ok_or_else(|| {
-            ASGError::ModuleError(format!("Function {} missing body", name))
-        })?;
+        let body_id = body_id
+            .ok_or_else(|| ASGError::ModuleError(format!("Function {} missing body", name)))?;
 
         // Добавляем определение
         module.definitions.insert(name.clone(), node_id);
 
         // Добавляем экспорт
-        module.add_export(name, ExportedDef::Function {
-            params,
-            body_id,
-            asg: asg.clone(),
-        });
+        module.add_export(
+            name,
+            ExportedDef::Function {
+                params,
+                body_id,
+                asg: asg.clone(),
+            },
+        );
 
         Ok(())
     }
@@ -314,16 +313,16 @@ impl ModuleLoader {
         asg: &ASG,
         node_id: NodeID,
     ) -> ASGResult<()> {
-        let node = asg.find_node(node_id).ok_or_else(|| {
-            ASGError::NodeNotFound(node_id)
-        })?;
+        let node = asg
+            .find_node(node_id)
+            .ok_or_else(|| ASGError::NodeNotFound(node_id))?;
 
         // Получаем имя переменной
-        let name = node.payload.as_ref().map(|p| {
-            String::from_utf8_lossy(p).to_string()
-        }).ok_or_else(|| {
-            ASGError::ModuleError("Variable missing name".to_string())
-        })?;
+        let name = node
+            .payload
+            .as_ref()
+            .map(|p| String::from_utf8_lossy(p).to_string())
+            .ok_or_else(|| ASGError::ModuleError("Variable missing name".to_string()))?;
 
         // Добавляем в определения
         module.definitions.insert(name.clone(), node_id);
@@ -361,12 +360,14 @@ impl ModuleLoader {
             self.load(module_name)?;
         }
 
-        self.registry.get_export(module_name, export_name).ok_or_else(|| {
-            ASGError::ModuleError(format!(
-                "Export '{}' not found in module '{}'",
-                export_name, module_name
-            ))
-        })
+        self.registry
+            .get_export(module_name, export_name)
+            .ok_or_else(|| {
+                ASGError::ModuleError(format!(
+                    "Export '{}' not found in module '{}'",
+                    export_name, module_name
+                ))
+            })
     }
 }
 

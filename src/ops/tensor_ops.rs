@@ -8,26 +8,30 @@ use std::rc::Rc; // Импортируем Rc
 fn reduce_grad(upstream: &ArrayD<f32>, target_shape: &[usize]) -> ArrayD<f32> {
     let mut current = upstream.clone();
     let upstream_shape = current.shape();
-    
+
     let trim_dims = upstream_shape.len().saturating_sub(target_shape.len());
     for _ in 0..trim_dims {
         current = current.sum_axis(Axis(0));
     }
 
     let mut axes_to_sum = Vec::new();
-    for (i, (&upstream_dim, &target_dim)) in current.shape().iter().zip(target_shape.iter()).enumerate() {
+    for (i, (&upstream_dim, &target_dim)) in
+        current.shape().iter().zip(target_shape.iter()).enumerate()
+    {
         if upstream_dim != target_dim {
             if target_dim == 1 {
                 axes_to_sum.push(i);
             } else {
-                 panic!(
+                panic!(
                     "Cannot reduce grad from shape {:?} to {:?}, dimension mismatch at axis {}",
-                    upstream.shape(), target_shape, i
+                    upstream.shape(),
+                    target_shape,
+                    i
                 );
             }
         }
     }
-    
+
     for axis_idx in axes_to_sum.iter().rev() {
         current = current.sum_axis(Axis(*axis_idx));
     }

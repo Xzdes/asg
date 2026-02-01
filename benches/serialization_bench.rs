@@ -1,16 +1,14 @@
 //! Benchmark for ASG serialization/deserialization.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use asg_lang::parser::parse_expr;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn benchmark_json_serialization(c: &mut Criterion) {
     // Prepare ASG
     let (asg, _) = parse_expr("(* (+ 2 3) (- 10 4))").unwrap();
 
     c.bench_function("ASG JSON serialization", |b| {
-        b.iter(|| {
-            black_box(serde_json::to_string(&asg).unwrap())
-        });
+        b.iter(|| black_box(serde_json::to_string(&asg).unwrap()));
     });
 }
 
@@ -20,9 +18,7 @@ fn benchmark_json_deserialization(c: &mut Criterion) {
     let json = serde_json::to_string(&asg).unwrap();
 
     c.bench_function("ASG JSON deserialization", |b| {
-        b.iter(|| {
-            black_box(serde_json::from_str::<asg_lang::asg::ASG>(&json).unwrap())
-        });
+        b.iter(|| black_box(serde_json::from_str::<asg_lang::asg::ASG>(&json).unwrap()));
     });
 }
 

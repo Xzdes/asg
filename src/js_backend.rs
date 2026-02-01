@@ -16,7 +16,10 @@ pub struct JsBackend;
 impl JsBackend {
     /// Компиляция ASG в JavaScript (заглушка).
     pub fn generate_js(asg: &ASG) -> crate::ASGResult<String> {
-        println!("JsBackend: generating JavaScript code for ASG with {} nodes.", asg.nodes.len());
+        println!(
+            "JsBackend: generating JavaScript code for ASG with {} nodes.",
+            asg.nodes.len()
+        );
         // TODO: Реализовать полноценную генерацию JS-кода.
         Ok("console.log('Hello from ASG JS backend!');".to_string())
     }

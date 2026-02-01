@@ -30,7 +30,10 @@ pub struct MacroInvocation {
 
 /// Выполнить макрос (stub).
 pub fn execute_macro(def: &MacroDefinition, invocation: &MacroInvocation) -> ASGResult<String> {
-    println!("Expanding macro `{}` with args: {:?}", def.name, invocation.arguments);
+    println!(
+        "Expanding macro `{}` with args: {:?}",
+        def.name, invocation.arguments
+    );
 
     // Заглушка для pattern/substitution.
     let mut expanded = def.body.clone();

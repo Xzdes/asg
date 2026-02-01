@@ -60,7 +60,12 @@ impl Node {
     }
 
     /// Создать новый узел с позицией в исходном коде.
-    pub fn with_span(id: NodeID, node_type: NodeType, payload: Option<Vec<u8>>, span: Span) -> Self {
+    pub fn with_span(
+        id: NodeID,
+        node_type: NodeType,
+        payload: Option<Vec<u8>>,
+        span: Span,
+    ) -> Self {
         Self {
             id,
             node_type,
@@ -71,7 +76,12 @@ impl Node {
     }
 
     /// Создать узел с рёбрами.
-    pub fn with_edges(id: NodeID, node_type: NodeType, payload: Option<Vec<u8>>, edges: Vec<Edge>) -> Self {
+    pub fn with_edges(
+        id: NodeID,
+        node_type: NodeType,
+        payload: Option<Vec<u8>>,
+        edges: Vec<Edge>,
+    ) -> Self {
         Self {
             id,
             node_type,
@@ -115,12 +125,17 @@ impl Node {
 
     /// Найти все рёбра заданного типа.
     pub fn find_edges(&self, edge_type: EdgeType) -> Vec<&Edge> {
-        self.edges.iter().filter(|e| e.edge_type == edge_type).collect()
+        self.edges
+            .iter()
+            .filter(|e| e.edge_type == edge_type)
+            .collect()
     }
 
     /// Получить имя из payload (для Variable, Function и т.д.).
     pub fn get_name(&self) -> Option<String> {
-        self.payload.as_ref().and_then(|p| String::from_utf8(p.clone()).ok())
+        self.payload
+            .as_ref()
+            .and_then(|p| String::from_utf8(p.clone()).ok())
     }
 }
 

@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 
 #[cfg(feature = "llvm_backend")]
-use crate::asg::{ASG, Node, NodeID};
+use crate::asg::{Node, NodeID, ASG};
 #[cfg(feature = "llvm_backend")]
 use crate::error::{ASGError, ASGResult};
 #[cfg(feature = "llvm_backend")]
@@ -35,9 +35,9 @@ use inkwell::targets::{
 #[cfg(feature = "llvm_backend")]
 use inkwell::values::{BasicValueEnum, FunctionValue, IntValue, PointerValue};
 #[cfg(feature = "llvm_backend")]
-use inkwell::IntPredicate;
-#[cfg(feature = "llvm_backend")]
 use inkwell::FloatPredicate;
+#[cfg(feature = "llvm_backend")]
+use inkwell::IntPredicate;
 #[cfg(feature = "llvm_backend")]
 use inkwell::OptimizationLevel;
 
@@ -172,9 +172,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 BasicValueEnum::IntValue(i1_type.const_int(val as u64, false))
             }
 
-            NodeType::LiteralString => {
-                self.compile_string_literal(node)?
-            }
+            NodeType::LiteralString => self.compile_string_literal(node)?,
 
             NodeType::LiteralUnit => {
                 // Unit представляем как 0
@@ -187,42 +185,59 @@ impl<'ctx> LLVMBackend<'ctx> {
 
             // === Арифметические операции (поддержка int и float) ===
             NodeType::BinaryOperation => self.compile_binary_arithmetic(
-                asg, node,
+                asg,
+                node,
                 |builder, a, b| builder.build_int_add(a, b, "add"),
                 |builder, a, b| builder.build_float_add(a, b, "fadd"),
             )?,
 
             NodeType::Sub => self.compile_binary_arithmetic(
-                asg, node,
+                asg,
+                node,
                 |builder, a, b| builder.build_int_sub(a, b, "sub"),
                 |builder, a, b| builder.build_float_sub(a, b, "fsub"),
             )?,
 
             NodeType::Mul => self.compile_binary_arithmetic(
-                asg, node,
+                asg,
+                node,
                 |builder, a, b| builder.build_int_mul(a, b, "mul"),
                 |builder, a, b| builder.build_float_mul(a, b, "fmul"),
             )?,
 
             NodeType::Div => self.compile_binary_arithmetic(
-                asg, node,
+                asg,
+                node,
                 |builder, a, b| builder.build_int_signed_div(a, b, "div"),
                 |builder, a, b| builder.build_float_div(a, b, "fdiv"),
             )?,
 
             NodeType::Mod => self.compile_binary_arithmetic(
-                asg, node,
+                asg,
+                node,
                 |builder, a, b| builder.build_int_signed_rem(a, b, "mod"),
                 |builder, a, b| builder.build_float_rem(a, b, "fmod"),
             )?,
 
             // === Операции сравнения (поддержка int и float) ===
-            NodeType::Eq => self.compile_comparison(asg, node, IntPredicate::EQ, FloatPredicate::OEQ)?,
-            NodeType::Ne => self.compile_comparison(asg, node, IntPredicate::NE, FloatPredicate::ONE)?,
-            NodeType::Lt => self.compile_comparison(asg, node, IntPredicate::SLT, FloatPredicate::OLT)?,
-            NodeType::Le => self.compile_comparison(asg, node, IntPredicate::SLE, FloatPredicate::OLE)?,
-            NodeType::Gt => self.compile_comparison(asg, node, IntPredicate::SGT, FloatPredicate::OGT)?,
-            NodeType::Ge => self.compile_comparison(asg, node, IntPredicate::SGE, FloatPredicate::OGE)?,
+            NodeType::Eq => {
+                self.compile_comparison(asg, node, IntPredicate::EQ, FloatPredicate::OEQ)?
+            }
+            NodeType::Ne => {
+                self.compile_comparison(asg, node, IntPredicate::NE, FloatPredicate::ONE)?
+            }
+            NodeType::Lt => {
+                self.compile_comparison(asg, node, IntPredicate::SLT, FloatPredicate::OLT)?
+            }
+            NodeType::Le => {
+                self.compile_comparison(asg, node, IntPredicate::SLE, FloatPredicate::OLE)?
+            }
+            NodeType::Gt => {
+                self.compile_comparison(asg, node, IntPredicate::SGT, FloatPredicate::OGT)?
+            }
+            NodeType::Ge => {
+                self.compile_comparison(asg, node, IntPredicate::SGE, FloatPredicate::OGE)?
+            }
 
             // === Логические операции ===
             NodeType::And => self.compile_binary_int_op(asg, node, "and", |builder, a, b| {
@@ -292,9 +307,11 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
 
             // === IntDiv (целочисленное деление) ===
-            NodeType::IntDiv => self.compile_binary_int_op(asg, node, "intdiv", |builder, a, b| {
-                builder.build_int_signed_div(a, b, "intdiv")
-            })?,
+            NodeType::IntDiv => {
+                self.compile_binary_int_op(asg, node, "intdiv", |builder, a, b| {
+                    builder.build_int_signed_div(a, b, "intdiv")
+                })?
+            }
 
             // === Print ===
             NodeType::Print => self.compile_print(asg, node)?,
@@ -384,7 +401,8 @@ impl<'ctx> LLVMBackend<'ctx> {
             &Builder<'ctx>,
             inkwell::values::FloatValue<'ctx>,
             inkwell::values::FloatValue<'ctx>,
-        ) -> Result<inkwell::values::FloatValue<'ctx>, inkwell::builder::BuilderError>,
+        )
+            -> Result<inkwell::values::FloatValue<'ctx>, inkwell::builder::BuilderError>,
     {
         let (left, right) = self.get_binary_operands(asg, node)?;
 
@@ -401,7 +419,8 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
             // Смешанные типы: конвертируем int в float
             (BasicValueEnum::IntValue(a), BasicValueEnum::FloatValue(b)) => {
-                let a_float = self.builder
+                let a_float = self
+                    .builder
                     .build_signed_int_to_float(a, self.context.f64_type(), "itof")
                     .map_err(|e| ASGError::CompilationError(e.to_string()))?;
                 let result = float_op(&self.builder, a_float, b)
@@ -409,7 +428,8 @@ impl<'ctx> LLVMBackend<'ctx> {
                 Ok(BasicValueEnum::FloatValue(result))
             }
             (BasicValueEnum::FloatValue(a), BasicValueEnum::IntValue(b)) => {
-                let b_float = self.builder
+                let b_float = self
+                    .builder
                     .build_signed_int_to_float(b, self.context.f64_type(), "itof")
                     .map_err(|e| ASGError::CompilationError(e.to_string()))?;
                 let result = float_op(&self.builder, a, b_float)
@@ -449,7 +469,8 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
             // Смешанные типы: конвертируем int в float
             (BasicValueEnum::IntValue(a), BasicValueEnum::FloatValue(b)) => {
-                let a_float = self.builder
+                let a_float = self
+                    .builder
                     .build_signed_int_to_float(a, self.context.f64_type(), "itof")
                     .map_err(|e| ASGError::CompilationError(e.to_string()))?;
                 let result = self
@@ -459,7 +480,8 @@ impl<'ctx> LLVMBackend<'ctx> {
                 Ok(BasicValueEnum::IntValue(result))
             }
             (BasicValueEnum::FloatValue(a), BasicValueEnum::IntValue(b)) => {
-                let b_float = self.builder
+                let b_float = self
+                    .builder
                     .build_signed_int_to_float(b, self.context.f64_type(), "itof")
                     .map_err(|e| ASGError::CompilationError(e.to_string()))?;
                 let result = self
@@ -535,10 +557,10 @@ impl<'ctx> LLVMBackend<'ctx> {
 
     /// Получить единственный операнд.
     fn get_single_operand(&mut self, asg: &ASG, node: &Node) -> ASGResult<BasicValueEnum<'ctx>> {
-        let edge = node
-            .edges
-            .first()
-            .ok_or(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument))?;
+        let edge = node.edges.first().ok_or(ASGError::MissingEdge(
+            node.id,
+            EdgeType::ApplicationArgument,
+        ))?;
         let target = asg
             .find_node(edge.target_node_id)
             .ok_or(ASGError::NodeNotFound(edge.target_node_id))?;
@@ -558,26 +580,33 @@ impl<'ctx> LLVMBackend<'ctx> {
         let f64_type = self.context.f64_type();
         let float_val = match operand {
             BasicValueEnum::FloatValue(v) => v,
-            BasicValueEnum::IntValue(v) => {
-                self.builder
-                    .build_signed_int_to_float(v, f64_type, "itof")
-                    .map_err(|e| ASGError::CompilationError(e.to_string()))?
+            BasicValueEnum::IntValue(v) => self
+                .builder
+                .build_signed_int_to_float(v, f64_type, "itof")
+                .map_err(|e| ASGError::CompilationError(e.to_string()))?,
+            _ => {
+                return Err(ASGError::TypeError(
+                    "Expected number for math function".to_string(),
+                ))
             }
-            _ => return Err(ASGError::TypeError("Expected number for math function".to_string())),
         };
 
         // Получаем или создаём intrinsic функцию
         let fn_type = f64_type.fn_type(&[f64_type.into()], false);
-        let intrinsic = self.module.get_function(intrinsic_name).unwrap_or_else(|| {
-            self.module.add_function(intrinsic_name, fn_type, None)
-        });
+        let intrinsic = self
+            .module
+            .get_function(intrinsic_name)
+            .unwrap_or_else(|| self.module.add_function(intrinsic_name, fn_type, None));
 
-        let result = self.builder
+        let result = self
+            .builder
             .build_call(intrinsic, &[float_val.into()], "math_result")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?
             .try_as_basic_value()
             .left()
-            .ok_or_else(|| ASGError::CompilationError("Math intrinsic returned void".to_string()))?;
+            .ok_or_else(|| {
+                ASGError::CompilationError("Math intrinsic returned void".to_string())
+            })?;
 
         Ok(result)
     }
@@ -591,30 +620,30 @@ impl<'ctx> LLVMBackend<'ctx> {
         // Конвертируем оба операнда в float
         let base_float = match base {
             BasicValueEnum::FloatValue(v) => v,
-            BasicValueEnum::IntValue(v) => {
-                self.builder
-                    .build_signed_int_to_float(v, f64_type, "itof")
-                    .map_err(|e| ASGError::CompilationError(e.to_string()))?
-            }
+            BasicValueEnum::IntValue(v) => self
+                .builder
+                .build_signed_int_to_float(v, f64_type, "itof")
+                .map_err(|e| ASGError::CompilationError(e.to_string()))?,
             _ => return Err(ASGError::TypeError("Expected number for pow".to_string())),
         };
 
         let exp_float = match exp {
             BasicValueEnum::FloatValue(v) => v,
-            BasicValueEnum::IntValue(v) => {
-                self.builder
-                    .build_signed_int_to_float(v, f64_type, "itof")
-                    .map_err(|e| ASGError::CompilationError(e.to_string()))?
-            }
+            BasicValueEnum::IntValue(v) => self
+                .builder
+                .build_signed_int_to_float(v, f64_type, "itof")
+                .map_err(|e| ASGError::CompilationError(e.to_string()))?,
             _ => return Err(ASGError::TypeError("Expected number for pow".to_string())),
         };
 
         let fn_type = f64_type.fn_type(&[f64_type.into(), f64_type.into()], false);
-        let pow_fn = self.module.get_function("llvm.pow.f64").unwrap_or_else(|| {
-            self.module.add_function("llvm.pow.f64", fn_type, None)
-        });
+        let pow_fn = self
+            .module
+            .get_function("llvm.pow.f64")
+            .unwrap_or_else(|| self.module.add_function("llvm.pow.f64", fn_type, None));
 
-        let result = self.builder
+        let result = self
+            .builder
             .build_call(pow_fn, &[base_float.into(), exp_float.into()], "pow_result")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?
             .try_as_basic_value()
@@ -634,36 +663,52 @@ impl<'ctx> LLVMBackend<'ctx> {
         let (left, right) = self.get_binary_operands(asg, node)?;
 
         let f64_type = self.context.f64_type();
-        let intrinsic_name = if is_min { "llvm.minnum.f64" } else { "llvm.maxnum.f64" };
+        let intrinsic_name = if is_min {
+            "llvm.minnum.f64"
+        } else {
+            "llvm.maxnum.f64"
+        };
 
         // Конвертируем оба операнда в float
         let left_float = match left {
             BasicValueEnum::FloatValue(v) => v,
-            BasicValueEnum::IntValue(v) => {
-                self.builder
-                    .build_signed_int_to_float(v, f64_type, "itof")
-                    .map_err(|e| ASGError::CompilationError(e.to_string()))?
+            BasicValueEnum::IntValue(v) => self
+                .builder
+                .build_signed_int_to_float(v, f64_type, "itof")
+                .map_err(|e| ASGError::CompilationError(e.to_string()))?,
+            _ => {
+                return Err(ASGError::TypeError(
+                    "Expected number for min/max".to_string(),
+                ))
             }
-            _ => return Err(ASGError::TypeError("Expected number for min/max".to_string())),
         };
 
         let right_float = match right {
             BasicValueEnum::FloatValue(v) => v,
-            BasicValueEnum::IntValue(v) => {
-                self.builder
-                    .build_signed_int_to_float(v, f64_type, "itof")
-                    .map_err(|e| ASGError::CompilationError(e.to_string()))?
+            BasicValueEnum::IntValue(v) => self
+                .builder
+                .build_signed_int_to_float(v, f64_type, "itof")
+                .map_err(|e| ASGError::CompilationError(e.to_string()))?,
+            _ => {
+                return Err(ASGError::TypeError(
+                    "Expected number for min/max".to_string(),
+                ))
             }
-            _ => return Err(ASGError::TypeError("Expected number for min/max".to_string())),
         };
 
         let fn_type = f64_type.fn_type(&[f64_type.into(), f64_type.into()], false);
-        let minmax_fn = self.module.get_function(intrinsic_name).unwrap_or_else(|| {
-            self.module.add_function(intrinsic_name, fn_type, None)
-        });
+        let minmax_fn = self
+            .module
+            .get_function(intrinsic_name)
+            .unwrap_or_else(|| self.module.add_function(intrinsic_name, fn_type, None));
 
-        let result = self.builder
-            .build_call(minmax_fn, &[left_float.into(), right_float.into()], "minmax_result")
+        let result = self
+            .builder
+            .build_call(
+                minmax_fn,
+                &[left_float.into(), right_float.into()],
+                "minmax_result",
+            )
             .map_err(|e| ASGError::CompilationError(e.to_string()))?
             .try_as_basic_value()
             .left()
@@ -748,7 +793,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                     .build_phi(self.context.i64_type(), "ifresult")
                     .map_err(|e| ASGError::CompilationError(e.to_string()))?;
                 phi.add_incoming(&[(&t, then_block), (&e, else_block)]);
-                Ok(BasicValueEnum::IntValue(phi.as_basic_value().into_int_value()))
+                Ok(BasicValueEnum::IntValue(
+                    phi.as_basic_value().into_int_value(),
+                ))
             }
             (BasicValueEnum::FloatValue(t), BasicValueEnum::FloatValue(e)) => {
                 let phi = self
@@ -779,10 +826,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         let param_names: Vec<String> = param_edges
             .iter()
-            .filter_map(|e| {
-                asg.find_node(e.target_node_id)
-                    .and_then(|n| n.get_name())
-            })
+            .filter_map(|e| asg.find_node(e.target_node_id).and_then(|n| n.get_name()))
             .collect();
 
         let param_types: Vec<_> = param_edges
@@ -812,7 +856,8 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         for (i, param_name) in param_names.iter().enumerate() {
             let param_value = function.get_nth_param(i as u32).unwrap();
-            let alloca = self.builder
+            let alloca = self
+                .builder
                 .build_alloca(i64_type, param_name)
                 .map_err(|e| ASGError::CompilationError(e.to_string()))?;
             self.builder
@@ -837,7 +882,8 @@ impl<'ctx> LLVMBackend<'ctx> {
                         .map_err(|e| ASGError::CompilationError(e.to_string()))?;
                 }
                 BasicValueEnum::FloatValue(v) => {
-                    let int_val = self.builder
+                    let int_val = self
+                        .builder
                         .build_float_to_signed_int(v, i64_type, "f2i")
                         .map_err(|e| ASGError::CompilationError(e.to_string()))?;
                     self.builder
@@ -881,10 +927,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         let param_edges = node.find_edges(EdgeType::FunctionParameter);
         let param_names: Vec<String> = param_edges
             .iter()
-            .filter_map(|e| {
-                asg.find_node(e.target_node_id)
-                    .and_then(|n| n.get_name())
-            })
+            .filter_map(|e| asg.find_node(e.target_node_id).and_then(|n| n.get_name()))
             .collect();
 
         // Находим захваченные переменные (те что в current_scope но не в параметрах)
@@ -932,24 +975,30 @@ impl<'ctx> LLVMBackend<'ctx> {
             let env_ptr = function.get_nth_param(0).unwrap().into_pointer_value();
 
             // Создаём тип структуры окружения
-            let env_field_types: Vec<inkwell::types::BasicTypeEnum> = captured
-                .iter()
-                .map(|_| i64_type.into())
-                .collect();
+            let env_field_types: Vec<inkwell::types::BasicTypeEnum> =
+                captured.iter().map(|_| i64_type.into()).collect();
             let env_struct_type = self.context.struct_type(&env_field_types, false);
 
             // Извлекаем каждую захваченную переменную
             for (i, var_name) in captured.iter().enumerate() {
-                let field_ptr = self.builder
-                    .build_struct_gep(env_struct_type, env_ptr, i as u32, &format!("env_{}", var_name))
+                let field_ptr = self
+                    .builder
+                    .build_struct_gep(
+                        env_struct_type,
+                        env_ptr,
+                        i as u32,
+                        &format!("env_{}", var_name),
+                    )
                     .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
-                let value = self.builder
+                let value = self
+                    .builder
                     .build_load(i64_type, field_ptr, var_name)
                     .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
                 // Создаём локальную переменную
-                let alloca = self.builder
+                let alloca = self
+                    .builder
                     .build_alloca(i64_type, var_name)
                     .map_err(|e| ASGError::CompilationError(e.to_string()))?;
                 self.builder
@@ -963,7 +1012,8 @@ impl<'ctx> LLVMBackend<'ctx> {
         // Создаём локальные переменные для параметров
         for (i, param_name) in param_names.iter().enumerate() {
             let param_value = function.get_nth_param((i + env_offset) as u32).unwrap();
-            let alloca = self.builder
+            let alloca = self
+                .builder
                 .build_alloca(i64_type, param_name)
                 .map_err(|e| ASGError::CompilationError(e.to_string()))?;
             self.builder
@@ -992,7 +1042,8 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
             BasicValueEnum::FloatValue(v) => {
                 // Конвертируем float в int для возврата
-                let int_val = self.builder
+                let int_val = self
+                    .builder
                     .build_float_to_signed_int(v, i64_type, "f2i")
                     .map_err(|e| ASGError::CompilationError(e.to_string()))?;
                 self.builder
@@ -1015,10 +1066,8 @@ impl<'ctx> LLVMBackend<'ctx> {
         // Сохраняем closure
         let env_ptr = if !captured.is_empty() {
             // Создаём окружение на куче
-            let env_field_types: Vec<inkwell::types::BasicTypeEnum> = captured
-                .iter()
-                .map(|_| i64_type.into())
-                .collect();
+            let env_field_types: Vec<inkwell::types::BasicTypeEnum> =
+                captured.iter().map(|_| i64_type.into()).collect();
             let env_struct_type = self.context.struct_type(&env_field_types, false);
 
             // Вычисляем размер структуры
@@ -1026,7 +1075,8 @@ impl<'ctx> LLVMBackend<'ctx> {
 
             // Выделяем память
             let malloc = self.get_or_declare_malloc();
-            let env_ptr = self.builder
+            let env_ptr = self
+                .builder
                 .build_call(malloc, &[env_size.into()], "env_alloc")
                 .map_err(|e| ASGError::CompilationError(e.to_string()))?
                 .try_as_basic_value()
@@ -1037,12 +1087,19 @@ impl<'ctx> LLVMBackend<'ctx> {
             // Заполняем окружение текущими значениями переменных
             for (i, var_name) in captured.iter().enumerate() {
                 if let Some(&var_ptr) = self.variables.get(var_name) {
-                    let value = self.builder
+                    let value = self
+                        .builder
                         .build_load(i64_type, var_ptr, &format!("load_{}", var_name))
                         .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
-                    let field_ptr = self.builder
-                        .build_struct_gep(env_struct_type, env_ptr, i as u32, &format!("env_field_{}", i))
+                    let field_ptr = self
+                        .builder
+                        .build_struct_gep(
+                            env_struct_type,
+                            env_ptr,
+                            i as u32,
+                            &format!("env_field_{}", i),
+                        )
                         .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
                     self.builder
@@ -1057,11 +1114,14 @@ impl<'ctx> LLVMBackend<'ctx> {
         };
 
         // Сохраняем closure в кэш
-        self.closures.insert(lambda_name.clone(), Closure {
-            function,
-            env_ptr,
-            captured,
-        });
+        self.closures.insert(
+            lambda_name.clone(),
+            Closure {
+                function,
+                env_ptr,
+                captured,
+            },
+        );
 
         self.functions.insert(lambda_name, function);
 
@@ -1145,7 +1205,9 @@ impl<'ctx> LLVMBackend<'ctx> {
         asg: &ASG,
         node: &Node,
     ) -> ASGResult<BasicValueEnum<'ctx>> {
-        let var_name = node.get_name().unwrap_or_else(|| format!("var_{}", node.id));
+        let var_name = node
+            .get_name()
+            .unwrap_or_else(|| format!("var_{}", node.id));
 
         // Создаём alloca
         let alloca = self
@@ -1294,7 +1356,8 @@ impl<'ctx> LLVMBackend<'ctx> {
     fn get_string_type(&self) -> inkwell::types::StructType<'ctx> {
         let i64_type = self.context.i64_type();
         let i8_ptr_type = self.context.ptr_type(inkwell::AddressSpace::default());
-        self.context.struct_type(&[i64_type.into(), i8_ptr_type.into()], false)
+        self.context
+            .struct_type(&[i64_type.into(), i8_ptr_type.into()], false)
     }
 
     /// Компиляция строкового литерала.
@@ -1316,12 +1379,14 @@ impl<'ctx> LLVMBackend<'ctx> {
         let i64_type = self.context.i64_type();
 
         // Аллоцируем структуру на стеке
-        let string_alloca = self.builder
+        let string_alloca = self
+            .builder
             .build_alloca(string_type, "string_tmp")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
         // Устанавливаем длину
-        let len_ptr = self.builder
+        let len_ptr = self
+            .builder
             .build_struct_gep(string_type, string_alloca, 0, "str_len_ptr")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
         self.builder
@@ -1329,7 +1394,8 @@ impl<'ctx> LLVMBackend<'ctx> {
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
         // Устанавливаем указатель на данные
-        let data_ptr_ptr = self.builder
+        let data_ptr_ptr = self
+            .builder
             .build_struct_gep(string_type, string_alloca, 1, "str_data_ptr")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
         self.builder
@@ -1337,7 +1403,8 @@ impl<'ctx> LLVMBackend<'ctx> {
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
         // Загружаем структуру
-        let string_val = self.builder
+        let string_val = self
+            .builder
             .build_load(string_type, string_alloca, "string_val")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
@@ -1354,17 +1421,20 @@ impl<'ctx> LLVMBackend<'ctx> {
         let i8_ptr_type = self.context.ptr_type(inkwell::AddressSpace::default());
 
         // Извлекаем длины
-        let left_len = self.builder
+        let left_len = self
+            .builder
             .build_extract_value(left.into_struct_value(), 0, "left_len")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?
             .into_int_value();
 
-        let right_len = self.builder
+        let right_len = self
+            .builder
             .build_extract_value(right.into_struct_value(), 1, "right_len")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
         // Вычисляем общую длину
-        let total_len = self.builder
+        let total_len = self
+            .builder
             .build_int_add(left_len, right_len.into_int_value(), "total_len")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
@@ -1372,27 +1442,36 @@ impl<'ctx> LLVMBackend<'ctx> {
         let malloc = self.get_or_declare_malloc();
 
         // Аллоцируем память для новой строки (+1 для null terminator)
-        let alloc_size = self.builder
+        let alloc_size = self
+            .builder
             .build_int_add(total_len, i64_type.const_int(1, false), "alloc_size")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
-        let new_data = self.builder
+        let new_data = self
+            .builder
             .build_call(malloc, &[alloc_size.into()], "new_str_data")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?
             .try_as_basic_value()
             .left()
-            .ok_or(ASGError::CompilationError("malloc returned void".to_string()))?
+            .ok_or(ASGError::CompilationError(
+                "malloc returned void".to_string(),
+            ))?
             .into_pointer_value();
 
         // Копируем первую строку
-        let left_data = self.builder
+        let left_data = self
+            .builder
             .build_extract_value(left.into_struct_value(), 1, "left_data")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?
             .into_pointer_value();
 
         let memcpy = self.get_or_declare_memcpy();
         self.builder
-            .build_call(memcpy, &[new_data.into(), left_data.into(), left_len.into()], "copy_left")
+            .build_call(
+                memcpy,
+                &[new_data.into(), left_data.into(), left_len.into()],
+                "copy_left",
+            )
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
         // Вычисляем смещение для второй строки
@@ -1403,40 +1482,50 @@ impl<'ctx> LLVMBackend<'ctx> {
         };
 
         // Копируем вторую строку
-        let right_data = self.builder
+        let right_data = self
+            .builder
             .build_extract_value(right.into_struct_value(), 1, "right_data")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?
             .into_pointer_value();
 
-        let right_len_val = self.builder
+        let right_len_val = self
+            .builder
             .build_extract_value(right.into_struct_value(), 0, "right_len_val")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?
             .into_int_value();
 
         self.builder
-            .build_call(memcpy, &[offset_ptr.into(), right_data.into(), right_len_val.into()], "copy_right")
+            .build_call(
+                memcpy,
+                &[offset_ptr.into(), right_data.into(), right_len_val.into()],
+                "copy_right",
+            )
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
         // Создаём новую строковую структуру
-        let result_alloca = self.builder
+        let result_alloca = self
+            .builder
             .build_alloca(string_type, "concat_result")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
-        let len_ptr = self.builder
+        let len_ptr = self
+            .builder
             .build_struct_gep(string_type, result_alloca, 0, "result_len_ptr")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
         self.builder
             .build_store(len_ptr, total_len)
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
-        let data_ptr = self.builder
+        let data_ptr = self
+            .builder
             .build_struct_gep(string_type, result_alloca, 1, "result_data_ptr")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
         self.builder
             .build_store(data_ptr, new_data)
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
-        let result = self.builder
+        let result = self
+            .builder
             .build_load(string_type, result_alloca, "concat_val")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
@@ -1447,7 +1536,8 @@ impl<'ctx> LLVMBackend<'ctx> {
     fn compile_string_length(&mut self, asg: &ASG, node: &Node) -> ASGResult<BasicValueEnum<'ctx>> {
         let operand = self.get_single_operand(asg, node)?;
 
-        let len = self.builder
+        let len = self
+            .builder
             .build_extract_value(operand.into_struct_value(), 0, "str_len")
             .map_err(|e| ASGError::CompilationError(e.to_string()))?;
 
@@ -1484,10 +1574,10 @@ impl<'ctx> LLVMBackend<'ctx> {
     /// Компиляция print (вызов printf).
     fn compile_print(&mut self, asg: &ASG, node: &Node) -> ASGResult<BasicValueEnum<'ctx>> {
         // Получаем аргумент
-        let arg_edge = node
-            .edges
-            .first()
-            .ok_or(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument))?;
+        let arg_edge = node.edges.first().ok_or(ASGError::MissingEdge(
+            node.id,
+            EdgeType::ApplicationArgument,
+        ))?;
 
         let arg_node = asg
             .find_node(arg_edge.target_node_id)
@@ -1511,11 +1601,13 @@ impl<'ctx> LLVMBackend<'ctx> {
                 // Проверяем, что это строка (структура с 2 полями)
                 if s.get_type().count_fields() == 2 {
                     // Извлекаем длину и данные
-                    let len = self.builder
+                    let len = self
+                        .builder
                         .build_extract_value(s, 0, "print_str_len")
                         .map_err(|e| ASGError::CompilationError(e.to_string()))?
                         .into_int_value();
-                    let data = self.builder
+                    let data = self
+                        .builder
                         .build_extract_value(s, 1, "print_str_data")
                         .map_err(|e| ASGError::CompilationError(e.to_string()))?
                         .into_pointer_value();
@@ -1620,9 +1712,7 @@ impl LLVMBackend {
     ///
     /// Эта функция доступна только при включении feature `llvm_backend`.
     pub fn compile(asg: &ASG) -> ASGResult<String> {
-        println!(
-            "LLVMBackend: LLVM support not compiled in. Enable 'llvm_backend' feature."
-        );
+        println!("LLVMBackend: LLVM support not compiled in. Enable 'llvm_backend' feature.");
         println!("ASG has {} nodes.", asg.nodes.len());
         Ok("; ModuleID = 'asg'\n; LLVM backend not available\n; Enable feature 'llvm_backend' to use real LLVM compilation".to_string())
     }
@@ -1641,7 +1731,7 @@ mod tests {
     #[cfg(feature = "llvm_backend")]
     mod llvm_tests {
         use super::super::*;
-        use crate::asg::{ASG, Edge, Node};
+        use crate::asg::{Edge, Node, ASG};
 
         /// Создаёт простой ASG с целочисленным литералом
         fn create_int_literal_asg(value: i64) -> ASG {

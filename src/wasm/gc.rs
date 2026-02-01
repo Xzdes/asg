@@ -43,9 +43,9 @@ pub struct GcConfig {
 impl Default for GcConfig {
     fn default() -> Self {
         Self {
-            heap_start: 0x1000,      // 4KB offset
-            heap_size: 0x100000,     // 1MB heap
-            gc_threshold: 0x80000,   // 512KB threshold
+            heap_start: 0x1000,    // 4KB offset
+            heap_size: 0x100000,   // 1MB heap
+            gc_threshold: 0x80000, // 512KB threshold
             enable_mark_sweep: true,
         }
     }
@@ -121,84 +121,80 @@ impl GcCodegen {
                 WasmInstruction::I32Const(HEAP_HEADER_SIZE as i32),
                 WasmInstruction::I32Add,
                 WasmInstruction::LocalSet(1), // total_size
-
                 // Проверяем free list
                 WasmInstruction::Comment("Check free list".into()),
                 WasmInstruction::I32Load(gc_metadata::FREE_LIST_HEAD),
-                WasmInstruction::If(vec![
-                    // TODO: реализовать выделение из free list
-                    WasmInstruction::I32Const(0),
-                ], Some(vec![
-                    // Bump allocation
-                    WasmInstruction::Comment("Bump allocation".into()),
-
-                    // ptr = heap_ptr
-                    WasmInstruction::I32Load(gc_metadata::HEAP_PTR),
-                    WasmInstruction::LocalSet(2), // ptr
-
-                    // new_heap_ptr = ptr + total_size
-                    WasmInstruction::LocalGet(2),
-                    WasmInstruction::LocalGet(1),
-                    WasmInstruction::I32Add,
-                    WasmInstruction::LocalSet(3), // new_heap_ptr
-
-                    // Проверяем границу heap
-                    WasmInstruction::LocalGet(3),
-                    WasmInstruction::I32Const((self.config.heap_start + self.config.heap_size) as i32),
-                    WasmInstruction::I32GtU,
-                    WasmInstruction::If(vec![
-                        // Нужен GC или out of memory
-                        WasmInstruction::Call("gc_collect".into()),
-                        // Retry allocation после GC
+                WasmInstruction::If(
+                    vec![
+                        // TODO: реализовать выделение из free list
+                        WasmInstruction::I32Const(0),
+                    ],
+                    Some(vec![
+                        // Bump allocation
+                        WasmInstruction::Comment("Bump allocation".into()),
+                        // ptr = heap_ptr
                         WasmInstruction::I32Load(gc_metadata::HEAP_PTR),
-                        WasmInstruction::LocalSet(2),
+                        WasmInstruction::LocalSet(2), // ptr
+                        // new_heap_ptr = ptr + total_size
                         WasmInstruction::LocalGet(2),
                         WasmInstruction::LocalGet(1),
                         WasmInstruction::I32Add,
-                        WasmInstruction::LocalSet(3),
-                    ], None),
-
-                    // Обновляем heap_ptr
-                    WasmInstruction::LocalGet(3),
-                    WasmInstruction::I32Store(gc_metadata::HEAP_PTR),
-
-                    // Обновляем allocated_bytes
-                    WasmInstruction::I32Load(gc_metadata::ALLOCATED_BYTES),
-                    WasmInstruction::LocalGet(1),
-                    WasmInstruction::I32Add,
-                    WasmInstruction::I32Store(gc_metadata::ALLOCATED_BYTES),
-
-                    // Инициализируем заголовок
-                    // type = 0
-                    WasmInstruction::LocalGet(2),
-                    WasmInstruction::I32Const(0),
-                    WasmInstruction::I32Store8(OFFSET_TYPE),
-
-                    // flags = 0
-                    WasmInstruction::LocalGet(2),
-                    WasmInstruction::I32Const(0),
-                    WasmInstruction::I32Store8(OFFSET_FLAGS),
-
-                    // refcount = 1
-                    WasmInstruction::LocalGet(2),
-                    WasmInstruction::I32Const(1),
-                    WasmInstruction::I32Store(OFFSET_REFCOUNT),
-
-                    // size = size (параметр)
-                    WasmInstruction::LocalGet(2),
-                    WasmInstruction::LocalGet(0),
-                    WasmInstruction::I64ExtendI32U,
-                    WasmInstruction::I64Store(OFFSET_SIZE),
-
-                    // Увеличиваем счётчик объектов
-                    WasmInstruction::I32Load(gc_metadata::OBJECT_COUNT),
-                    WasmInstruction::I32Const(1),
-                    WasmInstruction::I32Add,
-                    WasmInstruction::I32Store(gc_metadata::OBJECT_COUNT),
-
-                    // Возвращаем ptr
-                    WasmInstruction::LocalGet(2),
-                ])),
+                        WasmInstruction::LocalSet(3), // new_heap_ptr
+                        // Проверяем границу heap
+                        WasmInstruction::LocalGet(3),
+                        WasmInstruction::I32Const(
+                            (self.config.heap_start + self.config.heap_size) as i32,
+                        ),
+                        WasmInstruction::I32GtU,
+                        WasmInstruction::If(
+                            vec![
+                                // Нужен GC или out of memory
+                                WasmInstruction::Call("gc_collect".into()),
+                                // Retry allocation после GC
+                                WasmInstruction::I32Load(gc_metadata::HEAP_PTR),
+                                WasmInstruction::LocalSet(2),
+                                WasmInstruction::LocalGet(2),
+                                WasmInstruction::LocalGet(1),
+                                WasmInstruction::I32Add,
+                                WasmInstruction::LocalSet(3),
+                            ],
+                            None,
+                        ),
+                        // Обновляем heap_ptr
+                        WasmInstruction::LocalGet(3),
+                        WasmInstruction::I32Store(gc_metadata::HEAP_PTR),
+                        // Обновляем allocated_bytes
+                        WasmInstruction::I32Load(gc_metadata::ALLOCATED_BYTES),
+                        WasmInstruction::LocalGet(1),
+                        WasmInstruction::I32Add,
+                        WasmInstruction::I32Store(gc_metadata::ALLOCATED_BYTES),
+                        // Инициализируем заголовок
+                        // type = 0
+                        WasmInstruction::LocalGet(2),
+                        WasmInstruction::I32Const(0),
+                        WasmInstruction::I32Store8(OFFSET_TYPE),
+                        // flags = 0
+                        WasmInstruction::LocalGet(2),
+                        WasmInstruction::I32Const(0),
+                        WasmInstruction::I32Store8(OFFSET_FLAGS),
+                        // refcount = 1
+                        WasmInstruction::LocalGet(2),
+                        WasmInstruction::I32Const(1),
+                        WasmInstruction::I32Store(OFFSET_REFCOUNT),
+                        // size = size (параметр)
+                        WasmInstruction::LocalGet(2),
+                        WasmInstruction::LocalGet(0),
+                        WasmInstruction::I64ExtendI32U,
+                        WasmInstruction::I64Store(OFFSET_SIZE),
+                        // Увеличиваем счётчик объектов
+                        WasmInstruction::I32Load(gc_metadata::OBJECT_COUNT),
+                        WasmInstruction::I32Const(1),
+                        WasmInstruction::I32Add,
+                        WasmInstruction::I32Store(gc_metadata::OBJECT_COUNT),
+                        // Возвращаем ptr
+                        WasmInstruction::LocalGet(2),
+                    ]),
+                ),
             ],
         }
     }
@@ -217,12 +213,10 @@ impl GcCodegen {
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::I32Eqz,
                 WasmInstruction::BrIf(0), // return if null
-
                 // refcount = ptr[OFFSET_REFCOUNT]
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::I32Load(OFFSET_REFCOUNT),
                 WasmInstruction::LocalSet(1),
-
                 // refcount++
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::LocalGet(1),
@@ -247,29 +241,29 @@ impl GcCodegen {
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::I32Eqz,
                 WasmInstruction::BrIf(0), // return if null
-
                 // refcount = ptr[OFFSET_REFCOUNT]
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::I32Load(OFFSET_REFCOUNT),
                 WasmInstruction::LocalSet(1),
-
                 // refcount--
                 WasmInstruction::LocalGet(1),
                 WasmInstruction::I32Const(1),
                 WasmInstruction::I32Sub,
                 WasmInstruction::LocalTee(1),
-
                 // if refcount == 0, free
                 WasmInstruction::I32Eqz,
-                WasmInstruction::If(vec![
-                    WasmInstruction::LocalGet(0),
-                    WasmInstruction::Call("gc_free".into()),
-                ], Some(vec![
-                    // Сохраняем новый refcount
-                    WasmInstruction::LocalGet(0),
-                    WasmInstruction::LocalGet(1),
-                    WasmInstruction::I32Store(OFFSET_REFCOUNT),
-                ])),
+                WasmInstruction::If(
+                    vec![
+                        WasmInstruction::LocalGet(0),
+                        WasmInstruction::Call("gc_free".into()),
+                    ],
+                    Some(vec![
+                        // Сохраняем новый refcount
+                        WasmInstruction::LocalGet(0),
+                        WasmInstruction::LocalGet(1),
+                        WasmInstruction::I32Store(OFFSET_REFCOUNT),
+                    ]),
+                ),
             ],
         }
     }
@@ -293,65 +287,62 @@ impl GcCodegen {
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::I32Eqz,
                 WasmInstruction::BrIf(0),
-
                 // Получаем тип объекта
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::I32Load8U(OFFSET_TYPE),
                 WasmInstruction::LocalSet(1), // obj_type
-
                 // Для массивов: освобождаем элементы
                 WasmInstruction::LocalGet(1),
                 WasmInstruction::I32Const(ValueType::Array as i32),
                 WasmInstruction::I32Eq,
-                WasmInstruction::If(vec![
-                    // Получаем длину массива
-                    WasmInstruction::LocalGet(0),
-                    WasmInstruction::I32Load(ARRAY_LENGTH_OFFSET),
-                    WasmInstruction::LocalSet(2), // size = length
-
-                    // Цикл по элементам
-                    WasmInstruction::I32Const(0),
-                    WasmInstruction::LocalSet(3), // i = 0
-
-                    WasmInstruction::Loop(vec![
-                        WasmInstruction::LocalGet(3),
-                        WasmInstruction::LocalGet(2),
-                        WasmInstruction::I32LtU,
-                        WasmInstruction::If(vec![
-                            // child_ptr = ptr + ARRAY_DATA_OFFSET + i * 8
-                            WasmInstruction::LocalGet(0),
-                            WasmInstruction::I32Const(ARRAY_DATA_OFFSET as i32),
-                            WasmInstruction::I32Add,
+                WasmInstruction::If(
+                    vec![
+                        // Получаем длину массива
+                        WasmInstruction::LocalGet(0),
+                        WasmInstruction::I32Load(ARRAY_LENGTH_OFFSET),
+                        WasmInstruction::LocalSet(2), // size = length
+                        // Цикл по элементам
+                        WasmInstruction::I32Const(0),
+                        WasmInstruction::LocalSet(3), // i = 0
+                        WasmInstruction::Loop(vec![
                             WasmInstruction::LocalGet(3),
-                            WasmInstruction::I32Const(8),
-                            WasmInstruction::I32Mul,
-                            WasmInstruction::I32Add,
-                            WasmInstruction::I64Load(0),
-                            // Проверяем, является ли указателем
-                            WasmInstruction::Call("gc_release_if_ptr".into()),
-
-                            // i++
-                            WasmInstruction::LocalGet(3),
-                            WasmInstruction::I32Const(1),
-                            WasmInstruction::I32Add,
-                            WasmInstruction::LocalSet(3),
-
-                            WasmInstruction::Br(1), // continue loop
-                        ], None),
-                    ]),
-                ], None),
-
+                            WasmInstruction::LocalGet(2),
+                            WasmInstruction::I32LtU,
+                            WasmInstruction::If(
+                                vec![
+                                    // child_ptr = ptr + ARRAY_DATA_OFFSET + i * 8
+                                    WasmInstruction::LocalGet(0),
+                                    WasmInstruction::I32Const(ARRAY_DATA_OFFSET as i32),
+                                    WasmInstruction::I32Add,
+                                    WasmInstruction::LocalGet(3),
+                                    WasmInstruction::I32Const(8),
+                                    WasmInstruction::I32Mul,
+                                    WasmInstruction::I32Add,
+                                    WasmInstruction::I64Load(0),
+                                    // Проверяем, является ли указателем
+                                    WasmInstruction::Call("gc_release_if_ptr".into()),
+                                    // i++
+                                    WasmInstruction::LocalGet(3),
+                                    WasmInstruction::I32Const(1),
+                                    WasmInstruction::I32Add,
+                                    WasmInstruction::LocalSet(3),
+                                    WasmInstruction::Br(1), // continue loop
+                                ],
+                                None,
+                            ),
+                        ]),
+                    ],
+                    None,
+                ),
                 // Добавляем в free list
                 WasmInstruction::Comment("Add to free list".into()),
                 // next = free_list_head
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::I32Load(gc_metadata::FREE_LIST_HEAD),
                 WasmInstruction::I32Store(OFFSET_DATA), // используем data как next pointer
-
                 // free_list_head = ptr
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::I32Store(gc_metadata::FREE_LIST_HEAD),
-
                 // Уменьшаем счётчик объектов
                 WasmInstruction::I32Load(gc_metadata::OBJECT_COUNT),
                 WasmInstruction::I32Const(1),
@@ -369,57 +360,52 @@ impl GcCodegen {
             name: "gc_collect".to_string(),
             params: vec![],
             result: None,
-            locals: vec![
-                ("ptr", WasmType::I32),
-                ("i", WasmType::I32),
-            ],
+            locals: vec![("ptr", WasmType::I32), ("i", WasmType::I32)],
             body: if self.config.enable_mark_sweep {
                 vec![
                     WasmInstruction::Comment("Mark phase".into()),
                     // Помечаем все объекты как не-marked
                     WasmInstruction::Call("gc_unmark_all".into()),
-
                     // Помечаем достижимые из корней
                     WasmInstruction::I32Const(0),
                     WasmInstruction::LocalSet(1), // i = 0
-
                     WasmInstruction::Loop(vec![
                         WasmInstruction::LocalGet(1),
                         WasmInstruction::I32Const(gc_metadata::MAX_ROOTS as i32),
                         WasmInstruction::I32LtU,
-                        WasmInstruction::If(vec![
-                            // ptr = roots[i]
-                            WasmInstruction::I32Const(gc_metadata::ROOTS_TABLE as i32),
-                            WasmInstruction::LocalGet(1),
-                            WasmInstruction::I32Const(4),
-                            WasmInstruction::I32Mul,
-                            WasmInstruction::I32Add,
-                            WasmInstruction::I32Load(0),
-                            WasmInstruction::LocalTee(0),
-
-                            // if ptr != 0, mark
-                            WasmInstruction::If(vec![
-                                WasmInstruction::LocalGet(0),
-                                WasmInstruction::Call("gc_mark".into()),
-                            ], None),
-
-                            // i++
-                            WasmInstruction::LocalGet(1),
-                            WasmInstruction::I32Const(1),
-                            WasmInstruction::I32Add,
-                            WasmInstruction::LocalSet(1),
-
-                            WasmInstruction::Br(1),
-                        ], None),
+                        WasmInstruction::If(
+                            vec![
+                                // ptr = roots[i]
+                                WasmInstruction::I32Const(gc_metadata::ROOTS_TABLE as i32),
+                                WasmInstruction::LocalGet(1),
+                                WasmInstruction::I32Const(4),
+                                WasmInstruction::I32Mul,
+                                WasmInstruction::I32Add,
+                                WasmInstruction::I32Load(0),
+                                WasmInstruction::LocalTee(0),
+                                // if ptr != 0, mark
+                                WasmInstruction::If(
+                                    vec![
+                                        WasmInstruction::LocalGet(0),
+                                        WasmInstruction::Call("gc_mark".into()),
+                                    ],
+                                    None,
+                                ),
+                                // i++
+                                WasmInstruction::LocalGet(1),
+                                WasmInstruction::I32Const(1),
+                                WasmInstruction::I32Add,
+                                WasmInstruction::LocalSet(1),
+                                WasmInstruction::Br(1),
+                            ],
+                            None,
+                        ),
                     ]),
-
                     WasmInstruction::Comment("Sweep phase".into()),
                     WasmInstruction::Call("gc_sweep".into()),
                 ]
             } else {
-                vec![
-                    WasmInstruction::Comment("GC disabled".into()),
-                ]
+                vec![WasmInstruction::Comment("GC disabled".into())]
             },
         }
     }
@@ -438,12 +424,10 @@ impl GcCodegen {
                 WasmInstruction::I32Add,
                 WasmInstruction::Call("gc_alloc".into()),
                 WasmInstruction::LocalSet(2), // obj
-
                 // Устанавливаем тип = String
                 WasmInstruction::LocalGet(2),
                 WasmInstruction::I32Const(ValueType::String as i32),
                 WasmInstruction::I32Store8(OFFSET_TYPE),
-
                 // Копируем данные
                 WasmInstruction::LocalGet(2),
                 WasmInstruction::I32Const(STRING_DATA_OFFSET as i32),
@@ -451,7 +435,6 @@ impl GcCodegen {
                 WasmInstruction::LocalGet(0), // data_ptr
                 WasmInstruction::LocalGet(1), // len
                 WasmInstruction::MemoryCopy,
-
                 // Добавляем null terminator
                 WasmInstruction::LocalGet(2),
                 WasmInstruction::I32Const(STRING_DATA_OFFSET as i32),
@@ -460,7 +443,6 @@ impl GcCodegen {
                 WasmInstruction::I32Add,
                 WasmInstruction::I32Const(0),
                 WasmInstruction::I32Store8(0),
-
                 // Возвращаем obj
                 WasmInstruction::LocalGet(2),
             ],
@@ -483,22 +465,18 @@ impl GcCodegen {
                 WasmInstruction::I32Add,
                 WasmInstruction::Call("gc_alloc".into()),
                 WasmInstruction::LocalSet(1), // obj
-
                 // Устанавливаем тип = Array
                 WasmInstruction::LocalGet(1),
                 WasmInstruction::I32Const(ValueType::Array as i32),
                 WasmInstruction::I32Store8(OFFSET_TYPE),
-
                 // length = 0
                 WasmInstruction::LocalGet(1),
                 WasmInstruction::I32Const(0),
                 WasmInstruction::I32Store(ARRAY_LENGTH_OFFSET),
-
                 // capacity = capacity
                 WasmInstruction::LocalGet(1),
                 WasmInstruction::LocalGet(0),
                 WasmInstruction::I32Store(ARRAY_CAPACITY_OFFSET),
-
                 // Возвращаем obj
                 WasmInstruction::LocalGet(1),
             ],

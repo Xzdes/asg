@@ -58,34 +58,100 @@ pub fn calculate_line_col(source: &str, byte_offset: usize) -> (usize, usize) {
 /// Known forms for suggestions.
 const KNOWN_FORMS: &[&str] = &[
     // Arithmetic
-    "+", "-", "*", "/", "//", "%", "neg",
+    "+",
+    "-",
+    "*",
+    "/",
+    "//",
+    "%",
+    "neg",
     // Comparison
-    "==", "!=", "<", "<=", ">", ">=",
+    "==",
+    "!=",
+    "<",
+    "<=",
+    ">",
+    ">=",
     // Logic
-    "and", "or", "not", "&&", "||", "!",
+    "and",
+    "or",
+    "not",
+    "&&",
+    "||",
+    "!",
     // Variables
-    "let", "set",
+    "let",
+    "set",
     // Control
-    "if", "do", "while", "loop", "for", "break", "continue", "return", "match",
+    "if",
+    "do",
+    "while",
+    "loop",
+    "for",
+    "break",
+    "continue",
+    "return",
+    "match",
     // Functions
-    "fn", "lambda",
+    "fn",
+    "lambda",
     // Data
-    "array", "index", "nth", "first", "second", "third", "last", "length",
-    "map", "filter", "reduce", "dict", "record", "field",
+    "array",
+    "index",
+    "nth",
+    "first",
+    "second",
+    "third",
+    "last",
+    "length",
+    "map",
+    "filter",
+    "reduce",
+    "dict",
+    "record",
+    "field",
     // I/O
-    "print", "input", "read-file", "write-file",
+    "print",
+    "input",
+    "read-file",
+    "write-file",
     // Strings
-    "concat", "str-length", "substring", "str-split", "str-join",
+    "concat",
+    "str-length",
+    "substring",
+    "str-split",
+    "str-join",
     // Math
-    "sqrt", "sin", "cos", "tan", "pow", "abs", "floor", "ceil", "round", "min", "max",
+    "sqrt",
+    "sin",
+    "cos",
+    "tan",
+    "pow",
+    "abs",
+    "floor",
+    "ceil",
+    "round",
+    "min",
+    "max",
     // Error handling
-    "try", "throw", "is-error", "error-message",
+    "try",
+    "throw",
+    "is-error",
+    "error-message",
     // Pipeline
-    "|>", "pipe", "compose",
+    "|>",
+    "pipe",
+    "compose",
     // Lazy
-    "iterate", "repeat", "cycle", "take-lazy", "collect",
+    "iterate",
+    "repeat",
+    "cycle",
+    "take-lazy",
+    "collect",
     // Modules
-    "module", "import", "export",
+    "module",
+    "import",
+    "export",
 ];
 
 impl ParseError {
@@ -178,22 +244,31 @@ impl ParseError {
                 if let Some(similar) = find_similar_form(name) {
                     Some(format!("Did you mean '{}'?", similar))
                 } else {
-                    Some("Check the documentation for available forms: docs/BUILTIN_FUNCTIONS.md".to_string())
+                    Some(
+                        "Check the documentation for available forms: docs/BUILTIN_FUNCTIONS.md"
+                            .to_string(),
+                    )
                 }
             }
-            Self::WrongArity { name, expected, got, .. } => {
-                Some(format!(
-                    "'{}' requires {} argument(s), but {} provided. Check syntax: ({} arg1 arg2 ...)",
-                    name, expected, got, name
-                ))
-            }
+            Self::WrongArity {
+                name,
+                expected,
+                got,
+                ..
+            } => Some(format!(
+                "'{}' requires {} argument(s), but {} provided. Check syntax: ({} arg1 arg2 ...)",
+                name, expected, got, name
+            )),
             Self::UnclosedParen { .. } => {
                 Some("Make sure all opening parentheses '(' have matching closing ')'".to_string())
             }
-            Self::UnexpectedEof { .. } => {
-                Some("The expression is incomplete. Check for missing closing parentheses or arguments.".to_string())
-            }
-            Self::UnexpectedToken { expected, found, .. } => {
+            Self::UnexpectedEof { .. } => Some(
+                "The expression is incomplete. Check for missing closing parentheses or arguments."
+                    .to_string(),
+            ),
+            Self::UnexpectedToken {
+                expected, found, ..
+            } => {
                 if found == ")" && expected.contains("expression") {
                     Some("Empty list '()' is valid. For function calls, provide arguments: (fn arg1 arg2)".to_string())
                 } else {
@@ -247,20 +322,32 @@ fn levenshtein_distance(a: &str, b: &str) -> usize {
     let m = a_chars.len();
     let n = b_chars.len();
 
-    if m == 0 { return n; }
-    if n == 0 { return m; }
+    if m == 0 {
+        return n;
+    }
+    if n == 0 {
+        return m;
+    }
 
     let mut dp = vec![vec![0usize; n + 1]; m + 1];
 
-    for i in 0..=m { dp[i][0] = i; }
-    for j in 0..=n { dp[0][j] = j; }
+    for i in 0..=m {
+        dp[i][0] = i;
+    }
+    for j in 0..=n {
+        dp[0][j] = j;
+    }
 
     for i in 1..=m {
         for j in 1..=n {
-            let cost = if a_chars[i-1] == b_chars[j-1] { 0 } else { 1 };
-            dp[i][j] = (dp[i-1][j] + 1)
-                .min(dp[i][j-1] + 1)
-                .min(dp[i-1][j-1] + cost);
+            let cost = if a_chars[i - 1] == b_chars[j - 1] {
+                0
+            } else {
+                1
+            };
+            dp[i][j] = (dp[i - 1][j] + 1)
+                .min(dp[i][j - 1] + 1)
+                .min(dp[i - 1][j - 1] + cost);
         }
     }
 

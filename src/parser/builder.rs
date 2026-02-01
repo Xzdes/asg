@@ -59,11 +59,24 @@ impl AsgBuilder {
         let span = atom.span;
 
         let node = match &atom.value {
-            Atom::Int(n) => Node::with_span(id, NodeType::LiteralInt, Some(n.to_le_bytes().to_vec()), span),
-            Atom::Float(f) => {
-                Node::with_span(id, NodeType::LiteralFloat, Some(f.to_le_bytes().to_vec()), span)
-            }
-            Atom::String(s) => Node::with_span(id, NodeType::LiteralString, Some(s.as_bytes().to_vec()), span),
+            Atom::Int(n) => Node::with_span(
+                id,
+                NodeType::LiteralInt,
+                Some(n.to_le_bytes().to_vec()),
+                span,
+            ),
+            Atom::Float(f) => Node::with_span(
+                id,
+                NodeType::LiteralFloat,
+                Some(f.to_le_bytes().to_vec()),
+                span,
+            ),
+            Atom::String(s) => Node::with_span(
+                id,
+                NodeType::LiteralString,
+                Some(s.as_bytes().to_vec()),
+                span,
+            ),
             Atom::Ident(s) => {
                 // Специальные идентификаторы
                 match s.as_str() {
@@ -94,7 +107,8 @@ impl AsgBuilder {
         // Пустой список = Unit
         if elements.is_empty() {
             let id = self.alloc_id();
-            self.asg.add_node(Node::with_span(id, NodeType::LiteralUnit, None, list.span));
+            self.asg
+                .add_node(Node::with_span(id, NodeType::LiteralUnit, None, list.span));
             return Ok(id);
         }
 
@@ -152,7 +166,7 @@ impl AsgBuilder {
             // Структуры данных
             "array" => self.build_array(elements, list.span),
             "index" => self.build_index(elements, list.span),
-            "nth" => self.build_index(elements, list.span),  // alias
+            "nth" => self.build_index(elements, list.span), // alias
             "first" => self.build_nth_shorthand(elements, 0, list.span),
             "second" => self.build_nth_shorthand(elements, 1, list.span),
             "third" => self.build_nth_shorthand(elements, 2, list.span),
@@ -281,11 +295,11 @@ impl AsgBuilder {
             "json-decode" => self.build_unary(elements, NodeType::JsonDecode, list.span),
 
             // HTML elements (html-input instead of input to avoid conflict with input function)
-            "html" | "head" | "body" | "div" | "span" | "p" | "h1" | "h2" | "h3" |
-            "ul" | "ol" | "li" | "a" | "img" | "form" | "html-input" | "html-button" | "table" |
-            "tr" | "td" | "th" | "style" | "script" | "meta" | "link" | "title" |
-            "header" | "footer" | "nav" | "main" | "section" | "article" |
-            "textarea" | "select" | "option" | "label" | "br" | "hr" => {
+            "html" | "head" | "body" | "div" | "span" | "p" | "h1" | "h2" | "h3" | "ul" | "ol"
+            | "li" | "a" | "img" | "form" | "html-input" | "html-button" | "table" | "tr"
+            | "td" | "th" | "style" | "script" | "meta" | "link" | "title" | "header"
+            | "footer" | "nav" | "main" | "section" | "article" | "textarea" | "select"
+            | "option" | "label" | "br" | "hr" => {
                 self.build_html_element(form_name, elements, list.span)
             }
 
@@ -311,7 +325,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 3 {
-            return Err(ParseError::wrong_arity(span, "+", "at least 2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "+",
+                "at least 2",
+                elements.len() - 1,
+            ));
         }
 
         let mut result = self.build_expr(&elements[1])?;
@@ -339,7 +358,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 3 {
-            return Err(ParseError::wrong_arity(span, "*", "at least 2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "*",
+                "at least 2",
+                elements.len() - 1,
+            ));
         }
 
         let mut result = self.build_expr(&elements[1])?;
@@ -470,7 +494,12 @@ impl AsgBuilder {
         match elements.len() {
             2 => self.build_unop(elements, unop_type, span),
             3 => self.build_binop(elements, binop_type, span),
-            _ => Err(ParseError::wrong_arity(span, "-", "1 or 2", elements.len() - 1)),
+            _ => Err(ParseError::wrong_arity(
+                span,
+                "-",
+                "1 or 2",
+                elements.len() - 1,
+            )),
         }
     }
 
@@ -483,7 +512,12 @@ impl AsgBuilder {
         // (let name value) или (let name Type value) или
         // (let [a b c] array-expr) - destructuring
         if elements.len() < 3 || elements.len() > 4 {
-            return Err(ParseError::wrong_arity(span, "let", "2 or 3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "let",
+                "2 or 3",
+                elements.len() - 1,
+            ));
         }
 
         // Проверяем, является ли второй элемент списком (destructuring)
@@ -563,7 +597,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 3 {
-            return Err(ParseError::wrong_arity(span, "set", "2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "set",
+                "2",
+                elements.len() - 1,
+            ));
         }
 
         let name = elements[1]
@@ -604,7 +643,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 3 || elements.len() > 4 {
-            return Err(ParseError::wrong_arity(span, "if", "2 or 3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "if",
+                "2 or 3",
+                elements.len() - 1,
+            ));
         }
 
         let cond_id = self.build_expr(&elements[1])?;
@@ -633,7 +677,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 2 {
-            return Err(ParseError::wrong_arity(span, "do", "1+", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "do",
+                "1+",
+                elements.len() - 1,
+            ));
         }
 
         // Строим все выражения последовательно
@@ -656,7 +705,8 @@ impl AsgBuilder {
             .map(|e| Edge::new(EdgeType::BlockStatement, e))
             .collect();
 
-        self.asg.add_node(Node::with_edges(id, NodeType::Block, None, edges));
+        self.asg
+            .add_node(Node::with_edges(id, NodeType::Block, None, edges));
         Ok(id)
     }
 
@@ -667,7 +717,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 2 {
-            return Err(ParseError::wrong_arity(span, "loop", "1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "loop",
+                "1",
+                elements.len() - 1,
+            ));
         }
 
         let body_id = self.build_expr(&elements[1])?;
@@ -689,7 +744,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 3 {
-            return Err(ParseError::wrong_arity(span, "while", "2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "while",
+                "2",
+                elements.len() - 1,
+            ));
         }
 
         let cond_id = self.build_expr(&elements[1])?;
@@ -715,7 +775,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() > 2 {
-            return Err(ParseError::wrong_arity(span, "break", "0 or 1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "break",
+                "0 or 1",
+                elements.len() - 1,
+            ));
         }
 
         let id = self.alloc_id();
@@ -746,7 +811,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() > 2 {
-            return Err(ParseError::wrong_arity(span, "return", "0 or 1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "return",
+                "0 or 1",
+                elements.len() - 1,
+            ));
         }
 
         let id = self.alloc_id();
@@ -792,13 +862,12 @@ impl AsgBuilder {
 
         // Создаем узлы параметров
         for param_expr in params_list {
-            let param_name =
-                param_expr
-                    .as_ident()
-                    .ok_or_else(|| ParseError::InvalidLiteral {
-                        span: param_expr.span(),
-                        message: "Expected identifier for parameter name".to_string(),
-                    })?;
+            let param_name = param_expr
+                .as_ident()
+                .ok_or_else(|| ParseError::InvalidLiteral {
+                    span: param_expr.span(),
+                    message: "Expected identifier for parameter name".to_string(),
+                })?;
 
             let param_id = self.alloc_id();
             self.asg.add_node(Node::new(
@@ -831,7 +900,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (lambda (params...) body)
         if elements.len() != 3 {
-            return Err(ParseError::wrong_arity(span, "lambda", "2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "lambda",
+                "2",
+                elements.len() - 1,
+            ));
         }
 
         let params_list = elements[1]
@@ -844,13 +918,12 @@ impl AsgBuilder {
         let mut edges = Vec::new();
 
         for param_expr in params_list {
-            let param_name =
-                param_expr
-                    .as_ident()
-                    .ok_or_else(|| ParseError::InvalidLiteral {
-                        span: param_expr.span(),
-                        message: "Expected identifier for parameter name".to_string(),
-                    })?;
+            let param_name = param_expr
+                .as_ident()
+                .ok_or_else(|| ParseError::InvalidLiteral {
+                    span: param_expr.span(),
+                    message: "Expected identifier for parameter name".to_string(),
+                })?;
 
             let param_id = self.alloc_id();
             self.asg.add_node(Node::new(
@@ -879,7 +952,8 @@ impl AsgBuilder {
         // (func arg1 arg2 ...)
         if elements.is_empty() {
             let id = self.alloc_id();
-            self.asg.add_node(Node::new(id, NodeType::LiteralUnit, None));
+            self.asg
+                .add_node(Node::new(id, NodeType::LiteralUnit, None));
             return Ok(id);
         }
 
@@ -940,7 +1014,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (index array idx)
         if elements.len() != 3 {
-            return Err(ParseError::wrong_arity(span, "index", "2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "index",
+                "2",
+                elements.len() - 1,
+            ));
         }
 
         let array_id = self.build_expr(&elements[1])?;
@@ -967,7 +1046,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 2 {
-            return Err(ParseError::wrong_arity(span, "first/second/third", "1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "first/second/third",
+                "1",
+                elements.len() - 1,
+            ));
         }
 
         let array_id = self.build_expr(&elements[1])?;
@@ -1000,7 +1084,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 2 {
-            return Err(ParseError::wrong_arity(span, "last", "1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "last",
+                "1",
+                elements.len() - 1,
+            ));
         }
 
         let array_id = self.build_expr(&elements[1])?;
@@ -1023,7 +1112,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (length array)
         if elements.len() != 2 {
-            return Err(ParseError::wrong_arity(span, "length", "1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "length",
+                "1",
+                elements.len() - 1,
+            ));
         }
 
         let array_id = self.build_expr(&elements[1])?;
@@ -1046,7 +1140,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (set-index array idx value)
         if elements.len() != 4 {
-            return Err(ParseError::wrong_arity(span, "set-index", "3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "set-index",
+                "3",
+                elements.len() - 1,
+            ));
         }
 
         let array_id = self.build_expr(&elements[1])?;
@@ -1075,7 +1174,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (map array fn)
         if elements.len() != 3 {
-            return Err(ParseError::wrong_arity(span, "map", "2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "map",
+                "2",
+                elements.len() - 1,
+            ));
         }
 
         let array_id = self.build_expr(&elements[1])?;
@@ -1102,7 +1206,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (filter array predicate)
         if elements.len() != 3 {
-            return Err(ParseError::wrong_arity(span, "filter", "2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "filter",
+                "2",
+                elements.len() - 1,
+            ));
         }
 
         let array_id = self.build_expr(&elements[1])?;
@@ -1129,7 +1238,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (reduce array init fn)
         if elements.len() != 4 {
-            return Err(ParseError::wrong_arity(span, "reduce", "3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "reduce",
+                "3",
+                elements.len() - 1,
+            ));
         }
 
         let array_id = self.build_expr(&elements[1])?;
@@ -1158,7 +1272,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 2 {
-            return Err(ParseError::wrong_arity(span, "unary op", "1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "unary op",
+                "1",
+                elements.len() - 1,
+            ));
         }
 
         let arg_id = self.build_expr(&elements[1])?;
@@ -1181,7 +1300,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 4 {
-            return Err(ParseError::wrong_arity(span, "substring", "3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "substring",
+                "3",
+                elements.len() - 1,
+            ));
         }
 
         let str_id = self.build_expr(&elements[1])?;
@@ -1209,7 +1333,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 4 {
-            return Err(ParseError::wrong_arity(span, "str-replace", "3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "str-replace",
+                "3",
+                elements.len() - 1,
+            ));
         }
 
         let str_id = self.build_expr(&elements[1])?;
@@ -1245,7 +1374,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (try expr (catch e handler))
         if elements.len() != 3 {
-            return Err(ParseError::wrong_arity(span, "try", "2 (expr and catch)", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "try",
+                "2 (expr and catch)",
+                elements.len() - 1,
+            ));
         }
 
         let try_expr = self.build_expr(&elements[1])?;
@@ -1311,7 +1445,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 3 || elements.len() > 4 {
-            return Err(ParseError::wrong_arity(span, "range", "2 or 3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "range",
+                "2 or 3",
+                elements.len() - 1,
+            ));
         }
 
         let start_id = self.build_expr(&elements[1])?;
@@ -1328,23 +1467,24 @@ impl AsgBuilder {
         }
 
         let id = self.alloc_id();
-        self.asg.add_node(Node::with_edges(
-            id,
-            NodeType::Range,
-            None,
-            edges,
-        ));
+        self.asg
+            .add_node(Node::with_edges(id, NodeType::Range, None, edges));
         Ok(id)
     }
 
-    /// Построить lazy-range: (lazy-range start end [step])
+    /// Построить lazy-range: `(lazy-range start end [step])`
     fn build_lazy_range(
         &mut self,
         elements: &[SExpr],
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 3 || elements.len() > 4 {
-            return Err(ParseError::wrong_arity(span, "lazy-range", "2 or 3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "lazy-range",
+                "2 or 3",
+                elements.len() - 1,
+            ));
         }
 
         let start_id = self.build_expr(&elements[1])?;
@@ -1361,12 +1501,8 @@ impl AsgBuilder {
         }
 
         let id = self.alloc_id();
-        self.asg.add_node(Node::with_edges(
-            id,
-            NodeType::LazyRange,
-            None,
-            edges,
-        ));
+        self.asg
+            .add_node(Node::with_edges(id, NodeType::LazyRange, None, edges));
         Ok(id)
     }
 
@@ -1377,7 +1513,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 4 {
-            return Err(ParseError::wrong_arity(span, "for", "3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "for",
+                "3",
+                elements.len() - 1,
+            ));
         }
 
         let var_name = elements[1]
@@ -1412,7 +1553,7 @@ impl AsgBuilder {
         Ok(id)
     }
 
-    /// Построить list comprehension: (list-comp expr var iter [condition])
+    /// Построить list comprehension: `(list-comp expr var iter [condition])`
     fn build_list_comp(
         &mut self,
         elements: &[SExpr],
@@ -1420,7 +1561,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (list-comp expr var iter) или (list-comp expr var iter condition)
         if elements.len() < 4 || elements.len() > 5 {
-            return Err(ParseError::wrong_arity(span, "list-comp", "3 or 4", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "list-comp",
+                "3 or 4",
+                elements.len() - 1,
+            ));
         }
 
         let expr_id = self.build_expr(&elements[1])?;
@@ -1442,8 +1588,8 @@ impl AsgBuilder {
         };
 
         let mut edges = vec![
-            Edge::new(EdgeType::MapFunction, expr_id),      // expression
-            Edge::new(EdgeType::LoopInit, iterable_id),     // iterable
+            Edge::new(EdgeType::MapFunction, expr_id),  // expression
+            Edge::new(EdgeType::LoopInit, iterable_id), // iterable
         ];
 
         if let Some(cond_id) = condition_id {
@@ -1485,12 +1631,8 @@ impl AsgBuilder {
         }
 
         let id = self.alloc_id();
-        self.asg.add_node(Node::with_edges(
-            id,
-            NodeType::Dict,
-            None,
-            edges,
-        ));
+        self.asg
+            .add_node(Node::with_edges(id, NodeType::Dict, None, edges));
         Ok(id)
     }
 
@@ -1501,7 +1643,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 3 {
-            return Err(ParseError::wrong_arity(span, "pipe", "at least 2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "pipe",
+                "at least 2",
+                elements.len() - 1,
+            ));
         }
 
         let mut edges = Vec::new();
@@ -1511,12 +1658,8 @@ impl AsgBuilder {
         }
 
         let id = self.alloc_id();
-        self.asg.add_node(Node::with_edges(
-            id,
-            NodeType::Pipe,
-            None,
-            edges,
-        ));
+        self.asg
+            .add_node(Node::with_edges(id, NodeType::Pipe, None, edges));
         Ok(id)
     }
 
@@ -1527,7 +1670,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 3 {
-            return Err(ParseError::wrong_arity(span, "compose", "at least 2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "compose",
+                "at least 2",
+                elements.len() - 1,
+            ));
         }
 
         let mut edges = Vec::new();
@@ -1537,12 +1685,8 @@ impl AsgBuilder {
         }
 
         let id = self.alloc_id();
-        self.asg.add_node(Node::with_edges(
-            id,
-            NodeType::Compose,
-            None,
-            edges,
-        ));
+        self.asg
+            .add_node(Node::with_edges(id, NodeType::Compose, None, edges));
         Ok(id)
     }
 
@@ -1554,7 +1698,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (print expr)
         if elements.len() != 2 {
-            return Err(ParseError::wrong_arity(span, "print", "1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "print",
+                "1",
+                elements.len() - 1,
+            ));
         }
 
         let expr_id = self.build_expr(&elements[1])?;
@@ -1591,7 +1740,12 @@ impl AsgBuilder {
                 vec![Edge::new(EdgeType::ApplicationArgument, prompt_id)],
             ));
         } else {
-            return Err(ParseError::wrong_arity(span, "input", "0 or 1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "input",
+                "0 or 1",
+                elements.len() - 1,
+            ));
         }
 
         Ok(id)
@@ -1629,7 +1783,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 4 {
-            return Err(ParseError::wrong_arity(span, "http-response", "3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "http-response",
+                "3",
+                elements.len() - 1,
+            ));
         }
 
         let status_id = self.build_expr(&elements[1])?;
@@ -1657,7 +1816,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 4 {
-            return Err(ParseError::wrong_arity(span, "window", "at least 3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "window",
+                "at least 3",
+                elements.len() - 1,
+            ));
         }
 
         let title_id = self.build_expr(&elements[1])?;
@@ -1677,7 +1841,8 @@ impl AsgBuilder {
         }
 
         let id = self.alloc_id();
-        self.asg.add_node(Node::with_edges(id, NodeType::GuiWindow, None, edges));
+        self.asg
+            .add_node(Node::with_edges(id, NodeType::GuiWindow, None, edges));
         Ok(id)
     }
 
@@ -1688,7 +1853,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 3 {
-            return Err(ParseError::wrong_arity(span, "gui-button", "2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "gui-button",
+                "2",
+                elements.len() - 1,
+            ));
         }
 
         let text_id = self.build_expr(&elements[1])?;
@@ -1714,7 +1884,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() < 2 {
-            return Err(ParseError::wrong_arity(span, "text-field", "at least 1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "text-field",
+                "at least 1",
+                elements.len() - 1,
+            ));
         }
 
         let mut edges = Vec::new();
@@ -1724,7 +1899,8 @@ impl AsgBuilder {
         }
 
         let id = self.alloc_id();
-        self.asg.add_node(Node::with_edges(id, NodeType::GuiTextField, None, edges));
+        self.asg
+            .add_node(Node::with_edges(id, NodeType::GuiTextField, None, edges));
         Ok(id)
     }
 
@@ -1742,7 +1918,8 @@ impl AsgBuilder {
         }
 
         let id = self.alloc_id();
-        self.asg.add_node(Node::with_edges(id, node_type, None, edges));
+        self.asg
+            .add_node(Node::with_edges(id, node_type, None, edges));
         Ok(id)
     }
 
@@ -1753,7 +1930,12 @@ impl AsgBuilder {
         span: super::token::Span,
     ) -> Result<NodeID, ParseError> {
         if elements.len() != 4 {
-            return Err(ParseError::wrong_arity(span, "canvas", "3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "canvas",
+                "3",
+                elements.len() - 1,
+            ));
         }
 
         let width_id = self.build_expr(&elements[1])?;
@@ -1782,7 +1964,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (record Name (field1 val1) (field2 val2) ...)
         if elements.len() < 2 {
-            return Err(ParseError::wrong_arity(span, "record", "at least 1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "record",
+                "at least 1",
+                elements.len() - 1,
+            ));
         }
 
         let name = elements[1]
@@ -1849,18 +2036,22 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (field record field-name)
         if elements.len() != 3 {
-            return Err(ParseError::wrong_arity(span, "field", "2", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "field",
+                "2",
+                elements.len() - 1,
+            ));
         }
 
         let record_id = self.build_expr(&elements[1])?;
 
-        let field_name =
-            elements[2]
-                .as_ident()
-                .ok_or_else(|| ParseError::InvalidLiteral {
-                    span: elements[2].span(),
-                    message: "Expected field name".to_string(),
-                })?;
+        let field_name = elements[2]
+            .as_ident()
+            .ok_or_else(|| ParseError::InvalidLiteral {
+                span: elements[2].span(),
+                message: "Expected field name".to_string(),
+            })?;
 
         let id = self.alloc_id();
         self.asg.add_node(Node::with_edges(
@@ -1928,7 +2119,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (tensor value)
         if elements.len() != 2 {
-            return Err(ParseError::wrong_arity(span, "tensor", "1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "tensor",
+                "1",
+                elements.len() - 1,
+            ));
         }
 
         let value = elements[1]
@@ -1956,7 +2152,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (module name body...)
         if elements.len() < 2 {
-            return Err(ParseError::wrong_arity(span, "module", "at least 1", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "module",
+                "at least 1",
+                elements.len() - 1,
+            ));
         }
 
         let name = elements[1]
@@ -1991,7 +2192,12 @@ impl AsgBuilder {
     ) -> Result<NodeID, ParseError> {
         // (import "path/to/file.asg") or (import module-name)
         if elements.len() < 2 || elements.len() > 4 {
-            return Err(ParseError::wrong_arity(span, "import", "1-3", elements.len() - 1));
+            return Err(ParseError::wrong_arity(
+                span,
+                "import",
+                "1-3",
+                elements.len() - 1,
+            ));
         }
 
         // Путь к модулю (строка или идентификатор)
@@ -2015,10 +2221,14 @@ impl AsgBuilder {
                     message: "Expected 'as' keyword".to_string(),
                 });
             }
-            Some(elements[3].as_ident().ok_or_else(|| ParseError::InvalidLiteral {
-                span: elements[3].span(),
-                message: "Expected alias name".to_string(),
-            })?)
+            Some(
+                elements[3]
+                    .as_ident()
+                    .ok_or_else(|| ParseError::InvalidLiteral {
+                        span: elements[3].span(),
+                        message: "Expected alias name".to_string(),
+                    })?,
+            )
         } else {
             None
         };

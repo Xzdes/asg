@@ -178,7 +178,7 @@ pub enum NodeType {
     LetDestructure,
 
     // === List Comprehension ===
-    /// List comprehension: (list-comp expr var iter [condition])
+    /// List comprehension: `(list-comp expr var iter [condition])`
     ListComprehension,
 
     // === Lazy Sequences ===
@@ -188,7 +188,7 @@ pub enum NodeType {
     Repeat,
     /// Cycle: (cycle arr) -> lazy [a,b,c,a,b,c,...]
     Cycle,
-    /// Lazy range: (lazy-range start end [step])
+    /// Lazy range: `(lazy-range start end [step])`
     LazyRange,
     /// Take from lazy: (take-lazy n seq)
     TakeLazy,

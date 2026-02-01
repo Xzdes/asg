@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 
-use crate::asg::{ASG, Node, NodeID};
+use crate::asg::{Node, NodeID, ASG};
 use crate::error::{ASGError, ASGResult};
 use crate::nodecodes::{EdgeType, NodeType};
 use crate::ops::tensor_ops;
@@ -53,7 +53,10 @@ pub enum Value {
 #[derive(Debug, Clone, PartialEq)]
 pub enum LazySeqKind {
     /// Итерация: [init, f(init), f(f(init)), ...]
-    Iterate { func: Box<Value>, current: Box<Value> },
+    Iterate {
+        func: Box<Value>,
+        current: Box<Value>,
+    },
     /// Повторение: [val, val, val, ...]
     Repeat(Box<Value>),
     /// Цикл по массиву: [a,b,c,a,b,c,...]
@@ -61,9 +64,15 @@ pub enum LazySeqKind {
     /// Ленивый range
     Range { current: i64, end: i64, step: i64 },
     /// Ленивый map
-    Map { func: Box<Value>, source: Box<LazySeqKind> },
+    Map {
+        func: Box<Value>,
+        source: Box<LazySeqKind>,
+    },
     /// Ленивый filter
-    Filter { func: Box<Value>, source: Box<LazySeqKind> },
+    Filter {
+        func: Box<Value>,
+        source: Box<LazySeqKind>,
+    },
 }
 
 impl Value {
@@ -104,13 +113,15 @@ impl Value {
                 format!("[{}]", items.join(", "))
             }
             Value::Record(fields) => {
-                let items: Vec<String> = fields.iter()
+                let items: Vec<String> = fields
+                    .iter()
                     .map(|(k, v)| format!("{}: {}", k, v.format_display()))
                     .collect();
                 format!("{{{}}}", items.join(", "))
             }
             Value::Dict(dict) => {
-                let items: Vec<String> = dict.iter()
+                let items: Vec<String> = dict
+                    .iter()
                     .map(|(k, v)| format!("{}: {}", k, v.format_display()))
                     .collect();
                 format!("{{{}}}", items.join(", "))
@@ -300,9 +311,7 @@ impl Interpreter {
                 match (val1, val2) {
                     (Value::Int(a), Value::Int(b)) => {
                         if b == 0 {
-                            return Err(ASGError::InvalidOperation(
-                                "Division by zero".to_string(),
-                            ));
+                            return Err(ASGError::InvalidOperation("Division by zero".to_string()));
                         }
                         // True division returns float
                         Value::Float(a as f64 / b as f64)
@@ -323,9 +332,7 @@ impl Interpreter {
                 match (val1, val2) {
                     (Value::Int(a), Value::Int(b)) => {
                         if b == 0 {
-                            return Err(ASGError::InvalidOperation(
-                                "Modulo by zero".to_string(),
-                            ));
+                            return Err(ASGError::InvalidOperation("Modulo by zero".to_string()));
                         }
                         Value::Int(a % b)
                     }
@@ -342,17 +349,13 @@ impl Interpreter {
                 match (val1, val2) {
                     (Value::Int(a), Value::Int(b)) => {
                         if b == 0 {
-                            return Err(ASGError::InvalidOperation(
-                                "Division by zero".to_string(),
-                            ));
+                            return Err(ASGError::InvalidOperation("Division by zero".to_string()));
                         }
                         Value::Int(a / b)
                     }
                     (Value::Float(a), Value::Float(b)) => {
                         if b == 0.0 {
-                            return Err(ASGError::InvalidOperation(
-                                "Division by zero".to_string(),
-                            ));
+                            return Err(ASGError::InvalidOperation("Division by zero".to_string()));
                         }
                         Value::Int((a / b).floor() as i64)
                     }
@@ -369,11 +372,7 @@ impl Interpreter {
                 match val {
                     Value::Int(a) => Value::Int(-a),
                     Value::Float(a) => Value::Float(-a),
-                    _ => {
-                        return Err(ASGError::TypeError(
-                            "Expected number for Neg".to_string(),
-                        ))
-                    }
+                    _ => return Err(ASGError::TypeError("Expected number for Neg".to_string())),
                 }
             }
 
@@ -483,11 +482,7 @@ impl Interpreter {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
                     Value::Bool(a) => Value::Bool(!a),
-                    _ => {
-                        return Err(ASGError::TypeError(
-                            "Expected boolean for Not".to_string(),
-                        ))
-                    }
+                    _ => return Err(ASGError::TypeError("Expected boolean for Not".to_string())),
                 }
             }
 
@@ -516,7 +511,8 @@ impl Interpreter {
 
             // === Block ===
             NodeType::Block => {
-                let stmt_edges: Vec<_> = node.find_edges(EdgeType::BlockStatement)
+                let stmt_edges: Vec<_> = node
+                    .find_edges(EdgeType::BlockStatement)
                     .into_iter()
                     .map(|e| e.target_node_id)
                     .collect();
@@ -540,16 +536,15 @@ impl Interpreter {
 
                 // Если есть условие - это while loop
                 if let Some(cond_edge) = node.find_edge(EdgeType::Condition) {
-
                     let mut result = Value::Unit;
                     loop {
                         // Очищаем весь кеш для пересчёта (переменные могли измениться)
                         self.memo.clear();
 
                         let cond_val = self.ensure_evaluated(asg, cond_edge.target_node_id)?;
-                        let cond = cond_val
-                            .as_bool()
-                            .ok_or(ASGError::TypeError("Loop condition must be boolean".to_string()))?;
+                        let cond = cond_val.as_bool().ok_or(ASGError::TypeError(
+                            "Loop condition must be boolean".to_string(),
+                        ))?;
 
                         if !cond {
                             break;
@@ -585,16 +580,21 @@ impl Interpreter {
 
             NodeType::LetDestructure => {
                 // Декодируем имена из payload
-                let payload = node.payload.as_ref()
+                let payload = node
+                    .payload
+                    .as_ref()
                     .ok_or(ASGError::MissingPayload(node.id))?;
 
                 // Первые 4 байта - количество имён
-                let count = u32::from_le_bytes([payload[0], payload[1], payload[2], payload[3]]) as usize;
+                let count =
+                    u32::from_le_bytes([payload[0], payload[1], payload[2], payload[3]]) as usize;
                 let mut names = Vec::with_capacity(count);
                 let mut pos = 4;
 
                 for _ in 0..count {
-                    let end = payload[pos..].iter().position(|&b| b == 0)
+                    let end = payload[pos..]
+                        .iter()
+                        .position(|&b| b == 0)
                         .map(|p| pos + p)
                         .unwrap_or(payload.len());
                     let name = String::from_utf8_lossy(&payload[pos..end]).to_string();
@@ -603,7 +603,8 @@ impl Interpreter {
                 }
 
                 // Вычисляем значение
-                let val_edge = node.find_edge(EdgeType::VarValue)
+                let val_edge = node
+                    .find_edge(EdgeType::VarValue)
                     .ok_or(ASGError::MissingEdge(node.id, EdgeType::VarValue))?;
                 let value = self.ensure_evaluated(asg, val_edge.target_node_id)?;
 
@@ -629,7 +630,7 @@ impl Interpreter {
                     }
                     _ => {
                         return Err(ASGError::TypeError(
-                            "Destructuring requires Array, Record, or Dict".to_string()
+                            "Destructuring requires Array, Record, or Dict".to_string(),
                         ));
                     }
                 }
@@ -700,11 +701,17 @@ impl Interpreter {
                 self.functions
                     .insert(func_name.clone(), (params.clone(), body_id, None));
 
-                Value::Function { params, body_id, captured: HashMap::new() }
+                Value::Function {
+                    params,
+                    body_id,
+                    captured: HashMap::new(),
+                }
             }
 
             NodeType::Parameter => {
-                let param_name = node.get_name().unwrap_or_else(|| format!("param_{}", node.id));
+                let param_name = node
+                    .get_name()
+                    .unwrap_or_else(|| format!("param_{}", node.id));
                 // Параметр получает значение из стека вызовов или глобальных переменных
                 self.resolve_variable(&param_name)
                     .cloned()
@@ -743,7 +750,11 @@ impl Interpreter {
                     }
                 }
 
-                Value::Function { params, body_id, captured }
+                Value::Function {
+                    params,
+                    body_id,
+                    captured,
+                }
             }
 
             NodeType::Call => {
@@ -805,7 +816,11 @@ impl Interpreter {
                     // Попробуем вычислить target как значение
                     let fn_val = self.ensure_evaluated(asg, call_target.target_node_id)?;
                     match fn_val {
-                        Value::Function { params, body_id, captured } => {
+                        Value::Function {
+                            params,
+                            body_id,
+                            captured,
+                        } => {
                             let mut frame = CallFrame::default();
                             for (name, val) in &captured {
                                 frame.locals.insert(name.clone(), val.clone());
@@ -878,7 +893,8 @@ impl Interpreter {
 
             // === Массивы ===
             NodeType::Array => {
-                let element_ids: Vec<_> = node.find_edges(EdgeType::ArrayElement)
+                let element_ids: Vec<_> = node
+                    .find_edges(EdgeType::ArrayElement)
                     .into_iter()
                     .map(|e| e.target_node_id)
                     .collect();
@@ -891,10 +907,10 @@ impl Interpreter {
             }
 
             NodeType::ArrayIndex => {
-                let array_edge = node
-                    .edges
-                    .first()
-                    .ok_or(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument))?;
+                let array_edge = node.edges.first().ok_or(ASGError::MissingEdge(
+                    node.id,
+                    EdgeType::ApplicationArgument,
+                ))?;
                 let index_edge = node
                     .find_edge(EdgeType::ArrayIndexExpr)
                     .ok_or(ASGError::MissingEdge(node.id, EdgeType::ArrayIndexExpr))?;
@@ -923,44 +939,38 @@ impl Interpreter {
             }
 
             NodeType::ArrayLength => {
-                let array_edge = node
-                    .edges
-                    .first()
-                    .ok_or(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument))?;
+                let array_edge = node.edges.first().ok_or(ASGError::MissingEdge(
+                    node.id,
+                    EdgeType::ApplicationArgument,
+                ))?;
 
                 let array_val = self.ensure_evaluated(asg, array_edge.target_node_id)?;
 
                 match &array_val {
                     Value::Array(arr) => Value::Int(arr.len() as i64),
-                    _ => {
-                        return Err(ASGError::TypeError(
-                            "Expected array for length".to_string(),
-                        ))
-                    }
+                    _ => return Err(ASGError::TypeError("Expected array for length".to_string())),
                 }
             }
 
             NodeType::ArrayLast => {
-                let array_edge = node
-                    .edges
-                    .first()
-                    .ok_or(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument))?;
+                let array_edge = node.edges.first().ok_or(ASGError::MissingEdge(
+                    node.id,
+                    EdgeType::ApplicationArgument,
+                ))?;
 
                 let array_val = self.ensure_evaluated(asg, array_edge.target_node_id)?;
 
                 match array_val {
-                    Value::Array(arr) => {
-                        arr.last().cloned().unwrap_or(Value::Unit)
-                    }
+                    Value::Array(arr) => arr.last().cloned().unwrap_or(Value::Unit),
                     _ => return Err(ASGError::TypeError("Expected array for last".to_string())),
                 }
             }
 
             NodeType::ArraySetIndex => {
-                let array_edge = node
-                    .edges
-                    .first()
-                    .ok_or(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument))?;
+                let array_edge = node.edges.first().ok_or(ASGError::MissingEdge(
+                    node.id,
+                    EdgeType::ApplicationArgument,
+                ))?;
                 let index_edge = node
                     .find_edge(EdgeType::ArrayIndexExpr)
                     .ok_or(ASGError::MissingEdge(node.id, EdgeType::ArrayIndexExpr))?;
@@ -1016,20 +1026,16 @@ impl Interpreter {
 
                 let arr = match &array_val {
                     Value::Array(a) => a.clone(),
-                    _ => {
-                        return Err(ASGError::TypeError(
-                            "Expected array for map".to_string(),
-                        ))
-                    }
+                    _ => return Err(ASGError::TypeError("Expected array for map".to_string())),
                 };
 
                 let (params, body_id, captured) = match &fn_val {
-                    Value::Function { params, body_id, captured } => (params.clone(), *body_id, captured.clone()),
-                    _ => {
-                        return Err(ASGError::TypeError(
-                            "Expected function for map".to_string(),
-                        ))
-                    }
+                    Value::Function {
+                        params,
+                        body_id,
+                        captured,
+                    } => (params.clone(), *body_id, captured.clone()),
+                    _ => return Err(ASGError::TypeError("Expected function for map".to_string())),
                 };
 
                 let mut result = Vec::with_capacity(arr.len());
@@ -1070,15 +1076,15 @@ impl Interpreter {
 
                 let arr = match &array_val {
                     Value::Array(a) => a.clone(),
-                    _ => {
-                        return Err(ASGError::TypeError(
-                            "Expected array for filter".to_string(),
-                        ))
-                    }
+                    _ => return Err(ASGError::TypeError("Expected array for filter".to_string())),
                 };
 
                 let (params, body_id, captured) = match &pred_val {
-                    Value::Function { params, body_id, captured } => (params.clone(), *body_id, captured.clone()),
+                    Value::Function {
+                        params,
+                        body_id,
+                        captured,
+                    } => (params.clone(), *body_id, captured.clone()),
                     _ => {
                         return Err(ASGError::TypeError(
                             "Expected function for filter".to_string(),
@@ -1131,15 +1137,15 @@ impl Interpreter {
 
                 let arr = match &array_val {
                     Value::Array(a) => a.clone(),
-                    _ => {
-                        return Err(ASGError::TypeError(
-                            "Expected array for reduce".to_string(),
-                        ))
-                    }
+                    _ => return Err(ASGError::TypeError("Expected array for reduce".to_string())),
                 };
 
                 let (params, body_id, captured) = match &fn_val {
-                    Value::Function { params, body_id, captured } => (params.clone(), *body_id, captured.clone()),
+                    Value::Function {
+                        params,
+                        body_id,
+                        captured,
+                    } => (params.clone(), *body_id, captured.clone()),
                     _ => {
                         return Err(ASGError::TypeError(
                             "Expected function for reduce".to_string(),
@@ -1264,23 +1270,43 @@ impl Interpreter {
 
                 let start = match start_val {
                     Value::Int(n) => n,
-                    _ => return Err(ASGError::TypeError("Expected integer for lazy-range start".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected integer for lazy-range start".to_string(),
+                        ))
+                    }
                 };
                 let end = match end_val {
                     Value::Int(n) => n,
-                    _ => return Err(ASGError::TypeError("Expected integer for lazy-range end".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected integer for lazy-range end".to_string(),
+                        ))
+                    }
                 };
                 let step = if let Some(step_e) = step_edge {
                     let step_val = self.ensure_evaluated(asg, step_e.target_node_id)?;
                     match step_val {
                         Value::Int(n) => n,
-                        _ => return Err(ASGError::TypeError("Expected integer for lazy-range step".to_string())),
+                        _ => {
+                            return Err(ASGError::TypeError(
+                                "Expected integer for lazy-range step".to_string(),
+                            ))
+                        }
                     }
                 } else {
-                    if start <= end { 1 } else { -1 }
+                    if start <= end {
+                        1
+                    } else {
+                        -1
+                    }
                 };
 
-                Value::LazySeq(Box::new(LazySeqKind::Range { current: start, end, step }))
+                Value::LazySeq(Box::new(LazySeqKind::Range {
+                    current: start,
+                    end,
+                    step,
+                }))
             }
 
             NodeType::TakeLazy => {
@@ -1288,7 +1314,11 @@ impl Interpreter {
                 let (n_val, seq_val) = self.get_binary_operands(asg, node)?;
                 let n = match n_val {
                     Value::Int(n) => n as usize,
-                    _ => return Err(ASGError::TypeError("Expected integer for take-lazy count".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected integer for take-lazy count".to_string(),
+                        ))
+                    }
                 };
 
                 match seq_val {
@@ -1300,7 +1330,11 @@ impl Interpreter {
                         // Поддержка take для обычных массивов тоже
                         Value::Array(arr.into_iter().take(n).collect())
                     }
-                    _ => return Err(ASGError::TypeError("Expected lazy sequence or array for take-lazy".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected lazy sequence or array for take-lazy".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1308,13 +1342,15 @@ impl Interpreter {
                 // (lazy-map fn seq) -> lazy mapped seq
                 let (fn_val, seq_val) = self.get_binary_operands(asg, node)?;
                 match seq_val {
-                    Value::LazySeq(kind) => {
-                        Value::LazySeq(Box::new(LazySeqKind::Map {
-                            func: Box::new(fn_val),
-                            source: kind,
-                        }))
+                    Value::LazySeq(kind) => Value::LazySeq(Box::new(LazySeqKind::Map {
+                        func: Box::new(fn_val),
+                        source: kind,
+                    })),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected lazy sequence for lazy-map".to_string(),
+                        ))
                     }
-                    _ => return Err(ASGError::TypeError("Expected lazy sequence for lazy-map".to_string())),
                 }
             }
 
@@ -1322,13 +1358,15 @@ impl Interpreter {
                 // (lazy-filter fn seq) -> lazy filtered seq
                 let (fn_val, seq_val) = self.get_binary_operands(asg, node)?;
                 match seq_val {
-                    Value::LazySeq(kind) => {
-                        Value::LazySeq(Box::new(LazySeqKind::Filter {
-                            func: Box::new(fn_val),
-                            source: kind,
-                        }))
+                    Value::LazySeq(kind) => Value::LazySeq(Box::new(LazySeqKind::Filter {
+                        func: Box::new(fn_val),
+                        source: kind,
+                    })),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected lazy sequence for lazy-filter".to_string(),
+                        ))
                     }
-                    _ => return Err(ASGError::TypeError("Expected lazy sequence for lazy-filter".to_string())),
                 }
             }
 
@@ -1341,7 +1379,11 @@ impl Interpreter {
                         Value::Array(result)
                     }
                     Value::Array(arr) => Value::Array(arr),
-                    _ => return Err(ASGError::TypeError("Expected lazy sequence for collect".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected lazy sequence for collect".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1352,25 +1394,39 @@ impl Interpreter {
 
                 let start = match start_val {
                     Value::Int(n) => n,
-                    _ => return Err(ASGError::TypeError("Expected integer for range start".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected integer for range start".to_string(),
+                        ))
+                    }
                 };
                 let end = match end_val {
                     Value::Int(n) => n,
-                    _ => return Err(ASGError::TypeError("Expected integer for range end".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected integer for range end".to_string(),
+                        ))
+                    }
                 };
 
                 let step = if let Some(step_edge) = node.find_edge(EdgeType::LoopStep) {
                     let step_val = self.ensure_evaluated(asg, step_edge.target_node_id)?;
                     match step_val {
                         Value::Int(n) => n,
-                        _ => return Err(ASGError::TypeError("Expected integer for range step".to_string())),
+                        _ => {
+                            return Err(ASGError::TypeError(
+                                "Expected integer for range step".to_string(),
+                            ))
+                        }
                     }
                 } else {
                     1
                 };
 
                 if step == 0 {
-                    return Err(ASGError::InvalidOperation("Range step cannot be zero".to_string()));
+                    return Err(ASGError::InvalidOperation(
+                        "Range step cannot be zero".to_string(),
+                    ));
                 }
 
                 let mut result = Vec::new();
@@ -1408,7 +1464,11 @@ impl Interpreter {
                 let iterable_val = self.ensure_evaluated(asg, iterable_edge.target_node_id)?;
                 let items = match iterable_val {
                     Value::Array(arr) => arr,
-                    _ => return Err(ASGError::TypeError("Expected array for for loop".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected array for for loop".to_string(),
+                        ))
+                    }
                 };
 
                 let mut last_result = Value::Unit;
@@ -1435,7 +1495,11 @@ impl Interpreter {
                         arr.reverse();
                         Value::Array(arr)
                     }
-                    _ => return Err(ASGError::TypeError("Expected array for reverse".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected array for reverse".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1443,13 +1507,13 @@ impl Interpreter {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
                     Value::Array(mut arr) => {
-                        arr.sort_by(|a, b| {
-                            match (a, b) {
-                                (Value::Int(x), Value::Int(y)) => x.cmp(y),
-                                (Value::Float(x), Value::Float(y)) => x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal),
-                                (Value::String(x), Value::String(y)) => x.cmp(y),
-                                _ => std::cmp::Ordering::Equal,
+                        arr.sort_by(|a, b| match (a, b) {
+                            (Value::Int(x), Value::Int(y)) => x.cmp(y),
+                            (Value::Float(x), Value::Float(y)) => {
+                                x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal)
                             }
+                            (Value::String(x), Value::String(y)) => x.cmp(y),
+                            _ => std::cmp::Ordering::Equal,
                         });
                         Value::Array(arr)
                     }
@@ -1471,7 +1535,11 @@ impl Interpreter {
                                     float_sum += f;
                                     has_float = true;
                                 }
-                                _ => return Err(ASGError::TypeError("Expected numbers in array for sum".to_string())),
+                                _ => {
+                                    return Err(ASGError::TypeError(
+                                        "Expected numbers in array for sum".to_string(),
+                                    ))
+                                }
                             }
                         }
                         if has_float {
@@ -1501,7 +1569,11 @@ impl Interpreter {
                                     float_prod *= f;
                                     has_float = true;
                                 }
-                                _ => return Err(ASGError::TypeError("Expected numbers in array for product".to_string())),
+                                _ => {
+                                    return Err(ASGError::TypeError(
+                                        "Expected numbers in array for product".to_string(),
+                                    ))
+                                }
                             }
                         }
                         if has_float {
@@ -1510,7 +1582,11 @@ impl Interpreter {
                             Value::Int(int_prod)
                         }
                     }
-                    _ => return Err(ASGError::TypeError("Expected array for product".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected array for product".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1521,7 +1597,11 @@ impl Interpreter {
                         let found = arr.iter().any(|item| self.values_equal(item, &elem_val));
                         Value::Bool(found)
                     }
-                    _ => return Err(ASGError::TypeError("Expected array for contains".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected array for contains".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1529,13 +1609,19 @@ impl Interpreter {
                 let (arr_val, elem_val) = self.get_binary_operands(asg, node)?;
                 match arr_val {
                     Value::Array(arr) => {
-                        let idx = arr.iter().position(|item| self.values_equal(item, &elem_val));
+                        let idx = arr
+                            .iter()
+                            .position(|item| self.values_equal(item, &elem_val));
                         match idx {
                             Some(i) => Value::Int(i as i64),
                             None => Value::Int(-1),
                         }
                     }
-                    _ => return Err(ASGError::TypeError("Expected array for index-of".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected array for index-of".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1546,7 +1632,11 @@ impl Interpreter {
                         let n = n.max(0) as usize;
                         Value::Array(arr.into_iter().take(n).collect())
                     }
-                    _ => return Err(ASGError::TypeError("Expected (array, int) for take".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (array, int) for take".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1557,7 +1647,11 @@ impl Interpreter {
                         let n = n.max(0) as usize;
                         Value::Array(arr.into_iter().skip(n).collect())
                     }
-                    _ => return Err(ASGError::TypeError("Expected (array, int) for drop".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (array, int) for drop".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1579,14 +1673,20 @@ impl Interpreter {
                         arr1.extend(arr2);
                         Value::Array(arr1)
                     }
-                    _ => return Err(ASGError::TypeError("Expected two arrays for array-concat".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected two arrays for array-concat".to_string(),
+                        ))
+                    }
                 }
             }
 
             NodeType::ArraySlice => {
                 let edges: Vec<_> = node.edges.iter().collect();
                 if edges.len() != 3 {
-                    return Err(ASGError::InvalidOperation("slice requires 3 arguments".to_string()));
+                    return Err(ASGError::InvalidOperation(
+                        "slice requires 3 arguments".to_string(),
+                    ));
                 }
                 let arr_val = self.ensure_evaluated(asg, edges[0].target_node_id)?;
                 let start_val = self.ensure_evaluated(asg, edges[1].target_node_id)?;
@@ -1602,7 +1702,11 @@ impl Interpreter {
                             Value::Array(arr[start..end].to_vec())
                         }
                     }
-                    _ => return Err(ASGError::TypeError("Expected (array, int, int) for slice".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (array, int, int) for slice".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1617,7 +1721,11 @@ impl Interpreter {
                     let key = match key_val {
                         Value::String(s) => s,
                         Value::Int(n) => n.to_string(),
-                        _ => return Err(ASGError::TypeError("Dict keys must be strings or ints".to_string())),
+                        _ => {
+                            return Err(ASGError::TypeError(
+                                "Dict keys must be strings or ints".to_string(),
+                            ))
+                        }
                     };
                     dict.insert(key, val);
                     i += 2;
@@ -1634,14 +1742,21 @@ impl Interpreter {
                     (Value::Dict(dict), Value::Int(n)) => {
                         dict.get(&n.to_string()).cloned().unwrap_or(Value::Unit)
                     }
-                    _ => return Err(ASGError::TypeError("Expected (dict, key) for dict-get".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (dict, key) for dict-get".to_string(),
+                        ))
+                    }
                 }
             }
 
             NodeType::DictSet => {
                 let edges: Vec<_> = node.edges.iter().collect();
                 if edges.len() < 3 {
-                    return Err(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument));
+                    return Err(ASGError::MissingEdge(
+                        node.id,
+                        EdgeType::ApplicationArgument,
+                    ));
                 }
                 let dict_val = self.ensure_evaluated(asg, edges[0].target_node_id)?;
                 let key_val = self.ensure_evaluated(asg, edges[1].target_node_id)?;
@@ -1656,7 +1771,11 @@ impl Interpreter {
                         dict.insert(n.to_string(), new_val);
                         Value::Dict(dict)
                     }
-                    _ => return Err(ASGError::TypeError("Expected (dict, key, value) for dict-set".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (dict, key, value) for dict-set".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1664,8 +1783,14 @@ impl Interpreter {
                 let (dict_val, key_val) = self.get_binary_operands(asg, node)?;
                 match (dict_val, key_val) {
                     (Value::Dict(dict), Value::String(key)) => Value::Bool(dict.contains_key(&key)),
-                    (Value::Dict(dict), Value::Int(n)) => Value::Bool(dict.contains_key(&n.to_string())),
-                    _ => return Err(ASGError::TypeError("Expected (dict, key) for dict-has".to_string())),
+                    (Value::Dict(dict), Value::Int(n)) => {
+                        Value::Bool(dict.contains_key(&n.to_string()))
+                    }
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (dict, key) for dict-has".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1680,7 +1805,11 @@ impl Interpreter {
                         dict.remove(&n.to_string());
                         Value::Dict(dict)
                     }
-                    _ => return Err(ASGError::TypeError("Expected (dict, key) for dict-remove".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (dict, key) for dict-remove".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1690,17 +1819,23 @@ impl Interpreter {
                     Value::Dict(dict) => {
                         Value::Array(dict.keys().map(|k| Value::String(k.clone())).collect())
                     }
-                    _ => return Err(ASGError::TypeError("Expected dict for dict-keys".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected dict for dict-keys".to_string(),
+                        ))
+                    }
                 }
             }
 
             NodeType::DictValues => {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
-                    Value::Dict(dict) => {
-                        Value::Array(dict.values().cloned().collect())
+                    Value::Dict(dict) => Value::Array(dict.values().cloned().collect()),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected dict for dict-values".to_string(),
+                        ))
                     }
-                    _ => return Err(ASGError::TypeError("Expected dict for dict-values".to_string())),
                 }
             }
 
@@ -1713,7 +1848,11 @@ impl Interpreter {
                         }
                         Value::Dict(d1)
                     }
-                    _ => return Err(ASGError::TypeError("Expected two dicts for dict-merge".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected two dicts for dict-merge".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1721,7 +1860,11 @@ impl Interpreter {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
                     Value::Dict(dict) => Value::Int(dict.len() as i64),
-                    _ => return Err(ASGError::TypeError("Expected dict for dict-size".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected dict for dict-size".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1730,7 +1873,9 @@ impl Interpreter {
                 // (|> value fn1 fn2 ...)
                 let edges: Vec<_> = node.edges.iter().collect();
                 if edges.is_empty() {
-                    return Err(ASGError::InvalidOperation("Pipe requires at least one argument".to_string()));
+                    return Err(ASGError::InvalidOperation(
+                        "Pipe requires at least one argument".to_string(),
+                    ));
                 }
 
                 let mut current = self.ensure_evaluated(asg, edges[0].target_node_id)?;
@@ -1746,7 +1891,9 @@ impl Interpreter {
                 // (compose fn1 fn2 ...) - создаём композицию функций
                 let edges: Vec<_> = node.edges.iter().collect();
                 if edges.is_empty() {
-                    return Err(ASGError::InvalidOperation("Compose requires at least one function".to_string()));
+                    return Err(ASGError::InvalidOperation(
+                        "Compose requires at least one function".to_string(),
+                    ));
                 }
 
                 let mut fns = Vec::new();
@@ -1754,7 +1901,11 @@ impl Interpreter {
                     let fn_val = self.ensure_evaluated(asg, edge.target_node_id)?;
                     match &fn_val {
                         Value::Function { .. } | Value::ComposedFunction(_) => fns.push(fn_val),
-                        _ => return Err(ASGError::TypeError("Compose expects functions".to_string())),
+                        _ => {
+                            return Err(ASGError::TypeError(
+                                "Compose expects functions".to_string(),
+                            ))
+                        }
                     }
                 }
                 Value::ComposedFunction(fns)
@@ -1764,8 +1915,14 @@ impl Interpreter {
             NodeType::StringConcat => {
                 let (val1, val2) = self.get_binary_operands(asg, node)?;
                 match (val1, val2) {
-                    (Value::String(s1), Value::String(s2)) => Value::String(format!("{}{}", s1, s2)),
-                    _ => return Err(ASGError::TypeError("Expected strings for concat".to_string())),
+                    (Value::String(s1), Value::String(s2)) => {
+                        Value::String(format!("{}{}", s1, s2))
+                    }
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected strings for concat".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1773,14 +1930,21 @@ impl Interpreter {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
                     Value::String(s) => Value::Int(s.chars().count() as i64),
-                    _ => return Err(ASGError::TypeError("Expected string for str-length".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected string for str-length".to_string(),
+                        ))
+                    }
                 }
             }
 
             NodeType::StringSubstring => {
                 let edges: Vec<_> = node.edges.iter().collect();
                 if edges.len() < 3 {
-                    return Err(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument));
+                    return Err(ASGError::MissingEdge(
+                        node.id,
+                        EdgeType::ApplicationArgument,
+                    ));
                 }
                 let str_val = self.ensure_evaluated(asg, edges[0].target_node_id)?;
                 let start_val = self.ensure_evaluated(asg, edges[1].target_node_id)?;
@@ -1797,7 +1961,11 @@ impl Interpreter {
                             Value::String(chars[start..end].iter().collect())
                         }
                     }
-                    _ => return Err(ASGError::TypeError("Expected (string, int, int) for substring".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (string, int, int) for substring".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1805,10 +1973,17 @@ impl Interpreter {
                 let (val1, val2) = self.get_binary_operands(asg, node)?;
                 match (val1, val2) {
                     (Value::String(s), Value::String(delim)) => {
-                        let parts: Vec<Value> = s.split(&delim).map(|p| Value::String(p.to_string())).collect();
+                        let parts: Vec<Value> = s
+                            .split(&delim)
+                            .map(|p| Value::String(p.to_string()))
+                            .collect();
                         Value::Array(parts)
                     }
-                    _ => return Err(ASGError::TypeError("Expected strings for str-split".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected strings for str-split".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1816,15 +1991,22 @@ impl Interpreter {
                 let (val1, val2) = self.get_binary_operands(asg, node)?;
                 match (val1, val2) {
                     (Value::Array(arr), Value::String(delim)) => {
-                        let strings: Result<Vec<String>, _> = arr.into_iter().map(|v| {
-                            match v {
+                        let strings: Result<Vec<String>, _> = arr
+                            .into_iter()
+                            .map(|v| match v {
                                 Value::String(s) => Ok(s),
-                                _ => Err(ASGError::TypeError("Array elements must be strings for str-join".to_string())),
-                            }
-                        }).collect();
+                                _ => Err(ASGError::TypeError(
+                                    "Array elements must be strings for str-join".to_string(),
+                                )),
+                            })
+                            .collect();
                         Value::String(strings?.join(&delim))
                     }
-                    _ => return Err(ASGError::TypeError("Expected (array, string) for str-join".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (array, string) for str-join".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1832,14 +2014,21 @@ impl Interpreter {
                 let (val1, val2) = self.get_binary_operands(asg, node)?;
                 match (val1, val2) {
                     (Value::String(s), Value::String(substr)) => Value::Bool(s.contains(&substr)),
-                    _ => return Err(ASGError::TypeError("Expected strings for str-contains".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected strings for str-contains".to_string(),
+                        ))
+                    }
                 }
             }
 
             NodeType::StringReplace => {
                 let edges: Vec<_> = node.edges.iter().collect();
                 if edges.len() < 3 {
-                    return Err(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument));
+                    return Err(ASGError::MissingEdge(
+                        node.id,
+                        EdgeType::ApplicationArgument,
+                    ));
                 }
                 let str_val = self.ensure_evaluated(asg, edges[0].target_node_id)?;
                 let from_val = self.ensure_evaluated(asg, edges[1].target_node_id)?;
@@ -1849,7 +2038,11 @@ impl Interpreter {
                     (Value::String(s), Value::String(from), Value::String(to)) => {
                         Value::String(s.replace(&from, &to))
                     }
-                    _ => return Err(ASGError::TypeError("Expected strings for str-replace".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected strings for str-replace".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1866,26 +2059,40 @@ impl Interpreter {
             NodeType::ParseInt => {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
-                    Value::String(s) => {
-                        match s.trim().parse::<i64>() {
-                            Ok(n) => Value::Int(n),
-                            Err(_) => return Err(ASGError::InvalidOperation(format!("Cannot parse '{}' as int", s))),
+                    Value::String(s) => match s.trim().parse::<i64>() {
+                        Ok(n) => Value::Int(n),
+                        Err(_) => {
+                            return Err(ASGError::InvalidOperation(format!(
+                                "Cannot parse '{}' as int",
+                                s
+                            )))
                         }
+                    },
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected string for parse-int".to_string(),
+                        ))
                     }
-                    _ => return Err(ASGError::TypeError("Expected string for parse-int".to_string())),
                 }
             }
 
             NodeType::ParseFloat => {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
-                    Value::String(s) => {
-                        match s.trim().parse::<f64>() {
-                            Ok(f) => Value::Float(f),
-                            Err(_) => return Err(ASGError::InvalidOperation(format!("Cannot parse '{}' as float", s))),
+                    Value::String(s) => match s.trim().parse::<f64>() {
+                        Ok(f) => Value::Float(f),
+                        Err(_) => {
+                            return Err(ASGError::InvalidOperation(format!(
+                                "Cannot parse '{}' as float",
+                                s
+                            )))
                         }
+                    },
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected string for parse-float".to_string(),
+                        ))
                     }
-                    _ => return Err(ASGError::TypeError("Expected string for parse-float".to_string())),
                 }
             }
 
@@ -1893,7 +2100,11 @@ impl Interpreter {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
                     Value::String(s) => Value::String(s.trim().to_string()),
-                    _ => return Err(ASGError::TypeError("Expected string for str-trim".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected string for str-trim".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1901,7 +2112,11 @@ impl Interpreter {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
                     Value::String(s) => Value::String(s.to_uppercase()),
-                    _ => return Err(ASGError::TypeError("Expected string for str-upper".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected string for str-upper".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -1909,7 +2124,11 @@ impl Interpreter {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
                     Value::String(s) => Value::String(s.to_lowercase()),
-                    _ => return Err(ASGError::TypeError("Expected string for str-lower".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected string for str-lower".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -2084,10 +2303,10 @@ impl Interpreter {
 
             // === I/O ===
             NodeType::Print => {
-                let arg_edge = node
-                    .edges
-                    .first()
-                    .ok_or(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument))?;
+                let arg_edge = node.edges.first().ok_or(ASGError::MissingEdge(
+                    node.id,
+                    EdgeType::ApplicationArgument,
+                ))?;
 
                 let value = self.ensure_evaluated(asg, arg_edge.target_node_id)?;
 
@@ -2112,7 +2331,8 @@ impl Interpreter {
 
                 // Читаем строку
                 let mut input = String::new();
-                std::io::stdin().read_line(&mut input)
+                std::io::stdin()
+                    .read_line(&mut input)
                     .map_err(|e| ASGError::InvalidOperation(format!("Input error: {}", e)))?;
                 Value::String(input.trim_end().to_string())
             }
@@ -2129,10 +2349,12 @@ impl Interpreter {
                 }
 
                 let mut input = String::new();
-                std::io::stdin().read_line(&mut input)
+                std::io::stdin()
+                    .read_line(&mut input)
                     .map_err(|e| ASGError::InvalidOperation(format!("Input error: {}", e)))?;
-                let n: i64 = input.trim().parse()
-                    .map_err(|_| ASGError::TypeError(format!("Cannot parse '{}' as integer", input.trim())))?;
+                let n: i64 = input.trim().parse().map_err(|_| {
+                    ASGError::TypeError(format!("Cannot parse '{}' as integer", input.trim()))
+                })?;
                 Value::Int(n)
             }
 
@@ -2148,10 +2370,12 @@ impl Interpreter {
                 }
 
                 let mut input = String::new();
-                std::io::stdin().read_line(&mut input)
+                std::io::stdin()
+                    .read_line(&mut input)
                     .map_err(|e| ASGError::InvalidOperation(format!("Input error: {}", e)))?;
-                let f: f64 = input.trim().parse()
-                    .map_err(|_| ASGError::TypeError(format!("Cannot parse '{}' as float", input.trim())))?;
+                let f: f64 = input.trim().parse().map_err(|_| {
+                    ASGError::TypeError(format!("Cannot parse '{}' as float", input.trim()))
+                })?;
                 Value::Float(f)
             }
 
@@ -2166,13 +2390,20 @@ impl Interpreter {
             NodeType::ReadFile => {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
-                    Value::String(path) => {
-                        match fs::read_to_string(&path) {
-                            Ok(content) => Value::String(content),
-                            Err(e) => return Err(ASGError::InvalidOperation(format!("Cannot read file '{}': {}", path, e))),
+                    Value::String(path) => match fs::read_to_string(&path) {
+                        Ok(content) => Value::String(content),
+                        Err(e) => {
+                            return Err(ASGError::InvalidOperation(format!(
+                                "Cannot read file '{}': {}",
+                                path, e
+                            )))
                         }
+                    },
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected string path for read-file".to_string(),
+                        ))
                     }
-                    _ => return Err(ASGError::TypeError("Expected string path for read-file".to_string())),
                 }
             }
 
@@ -2182,10 +2413,19 @@ impl Interpreter {
                     (Value::String(path), Value::String(content)) => {
                         match fs::write(&path, &content) {
                             Ok(_) => Value::Unit,
-                            Err(e) => return Err(ASGError::InvalidOperation(format!("Cannot write file '{}': {}", path, e))),
+                            Err(e) => {
+                                return Err(ASGError::InvalidOperation(format!(
+                                    "Cannot write file '{}': {}",
+                                    path, e
+                                )))
+                            }
                         }
                     }
-                    _ => return Err(ASGError::TypeError("Expected (path, content) strings for write-file".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (path, content) strings for write-file".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -2194,16 +2434,28 @@ impl Interpreter {
                 match (val1, val2) {
                     (Value::String(path), Value::String(content)) => {
                         match fs::OpenOptions::new().create(true).append(true).open(&path) {
-                            Ok(mut file) => {
-                                match file.write_all(content.as_bytes()) {
-                                    Ok(_) => Value::Unit,
-                                    Err(e) => return Err(ASGError::InvalidOperation(format!("Cannot append to file '{}': {}", path, e))),
+                            Ok(mut file) => match file.write_all(content.as_bytes()) {
+                                Ok(_) => Value::Unit,
+                                Err(e) => {
+                                    return Err(ASGError::InvalidOperation(format!(
+                                        "Cannot append to file '{}': {}",
+                                        path, e
+                                    )))
                                 }
+                            },
+                            Err(e) => {
+                                return Err(ASGError::InvalidOperation(format!(
+                                    "Cannot open file '{}': {}",
+                                    path, e
+                                )))
                             }
-                            Err(e) => return Err(ASGError::InvalidOperation(format!("Cannot open file '{}': {}", path, e))),
                         }
                     }
-                    _ => return Err(ASGError::TypeError("Expected (path, content) strings for append-file".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected (path, content) strings for append-file".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -2211,7 +2463,11 @@ impl Interpreter {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
                     Value::String(path) => Value::Bool(std::path::Path::new(&path).exists()),
-                    _ => return Err(ASGError::TypeError("Expected string path for file-exists".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected string path for file-exists".to_string(),
+                        ))
+                    }
                 }
             }
 
@@ -2250,12 +2506,14 @@ impl Interpreter {
                         }
                         result
                     }
-                    Ok(val) => val,  // No error, return value
+                    Ok(val) => val, // No error, return value
                     Err(e) => {
                         // Runtime error, convert to Value::Error and execute handler
                         let saved_memo = std::mem::take(&mut self.memo);
                         let mut frame = CallFrame::default();
-                        frame.locals.insert(error_var_name, Value::Error(e.to_string()));
+                        frame
+                            .locals
+                            .insert(error_var_name, Value::Error(e.to_string()));
                         frame.memo = saved_memo;
                         self.call_stack.push(frame);
 
@@ -2286,13 +2544,18 @@ impl Interpreter {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
                     Value::Error(msg) => Value::String(msg),
-                    _ => return Err(ASGError::TypeError("Expected error for error-message".to_string())),
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected error for error-message".to_string(),
+                        ))
+                    }
                 }
             }
 
             // === Record ===
             NodeType::Record => {
-                let field_data: Vec<_> = node.find_edges(EdgeType::RecordFieldDef)
+                let field_data: Vec<_> = node
+                    .find_edges(EdgeType::RecordFieldDef)
                     .into_iter()
                     .map(|e| {
                         let field_node = asg.find_node(e.target_node_id);
@@ -2316,13 +2579,15 @@ impl Interpreter {
 
                 let record_val = self.ensure_evaluated(asg, record_edge.target_node_id)?;
                 match record_val {
-                    Value::Record(fields) => fields
-                        .get(&field_name)
-                        .cloned()
-                        .ok_or(ASGError::InvalidOperation(format!(
-                            "Field {} not found",
-                            field_name
-                        )))?,
+                    Value::Record(fields) => {
+                        fields
+                            .get(&field_name)
+                            .cloned()
+                            .ok_or(ASGError::InvalidOperation(format!(
+                                "Field {} not found",
+                                field_name
+                            )))?
+                    }
                     _ => {
                         return Err(ASGError::TypeError(
                             "Expected record for field access".to_string(),
@@ -2365,7 +2630,8 @@ impl Interpreter {
                         .ok_or(ASGError::NodeNotFound(pattern_edge.target_node_id))?
                         .clone();
 
-                    let (matches, bindings) = self.match_pattern(asg, &pattern_node, &subject_val)?;
+                    let (matches, bindings) =
+                        self.match_pattern(asg, &pattern_node, &subject_val)?;
 
                     if matches {
                         // Pattern matched! Evaluate body with bindings
@@ -2392,7 +2658,9 @@ impl Interpreter {
                     }
                 }
 
-                return Err(ASGError::InvalidOperation("No matching pattern found".to_string()));
+                return Err(ASGError::InvalidOperation(
+                    "No matching pattern found".to_string(),
+                ));
             }
 
             NodeType::MatchArm => {
@@ -2425,9 +2693,10 @@ impl Interpreter {
                 let source = match fs::read_to_string(path) {
                     Ok(content) => content,
                     Err(e) => {
-                        return Err(ASGError::InvalidOperation(
-                            format!("Cannot import '{}': {}", path, e)
-                        ));
+                        return Err(ASGError::InvalidOperation(format!(
+                            "Cannot import '{}': {}",
+                            path, e
+                        )));
                     }
                 };
 
@@ -2435,9 +2704,10 @@ impl Interpreter {
                 let (imported_asg, root_ids) = match parse(&source) {
                     Ok((asg, ids)) => (asg, ids),
                     Err(e) => {
-                        return Err(ASGError::InvalidOperation(
-                            format!("Parse error in '{}': {:?}", path, e)
-                        ));
+                        return Err(ASGError::InvalidOperation(format!(
+                            "Parse error in '{}': {:?}",
+                            path, e
+                        )));
                     }
                 };
 
@@ -2454,14 +2724,17 @@ impl Interpreter {
                 }
 
                 // Обновляем импортированные функции, добавляя ASG
-                let new_functions: Vec<String> = self.functions.keys()
+                let new_functions: Vec<String> = self
+                    .functions
+                    .keys()
                     .filter(|k| !functions_before.contains(*k))
                     .cloned()
                     .collect();
 
                 for name in new_functions {
                     if let Some((params, body_id, _)) = self.functions.remove(&name) {
-                        self.functions.insert(name, (params, body_id, Some(imported_asg.clone())));
+                        self.functions
+                            .insert(name, (params, body_id, Some(imported_asg.clone())));
                     }
                 }
 
@@ -2514,7 +2787,10 @@ impl Interpreter {
                 }
 
                 // Самозакрывающиеся теги
-                let self_closing = matches!(tag_name.as_str(), "br" | "hr" | "img" | "input" | "meta" | "link");
+                let self_closing = matches!(
+                    tag_name.as_str(),
+                    "br" | "hr" | "img" | "input" | "meta" | "link"
+                );
                 if self_closing {
                     html.push_str(" />");
                 } else {
@@ -2541,13 +2817,20 @@ impl Interpreter {
             NodeType::JsonDecode => {
                 let val = self.get_single_operand(asg, node)?;
                 match val {
-                    Value::String(s) => {
-                        match serde_json::from_str::<serde_json::Value>(&s) {
-                            Ok(json) => self.json_to_value(json),
-                            Err(e) => return Err(ASGError::InvalidOperation(format!("JSON parse error: {}", e))),
+                    Value::String(s) => match serde_json::from_str::<serde_json::Value>(&s) {
+                        Ok(json) => self.json_to_value(json),
+                        Err(e) => {
+                            return Err(ASGError::InvalidOperation(format!(
+                                "JSON parse error: {}",
+                                e
+                            )))
                         }
+                    },
+                    _ => {
+                        return Err(ASGError::TypeError(
+                            "Expected string for json-decode".to_string(),
+                        ))
                     }
-                    _ => return Err(ASGError::TypeError("Expected string for json-decode".to_string())),
                 }
             }
 
@@ -2557,12 +2840,13 @@ impl Interpreter {
                 let (port_val, handler_val) = self.get_binary_operands(asg, node)?;
                 match port_val {
                     Value::Int(port) => {
-                        use tiny_http::{Server, Response, Method};
                         #[allow(unused_imports)]
                         use std::io::Read;
+                        use tiny_http::{Method, Response, Server};
 
-                        let server = Server::http(format!("0.0.0.0:{}", port))
-                            .map_err(|e| ASGError::InvalidOperation(format!("Cannot start HTTP server: {}", e)))?;
+                        let server = Server::http(format!("0.0.0.0:{}", port)).map_err(|e| {
+                            ASGError::InvalidOperation(format!("Cannot start HTTP server: {}", e))
+                        })?;
 
                         println!("╔════════════════════════════════════════╗");
                         println!("║   ASG HTTP Server                  ║");
@@ -2586,7 +2870,8 @@ impl Interpreter {
 
                             // Create request dict for handler
                             let mut req_dict = HashMap::new();
-                            req_dict.insert("method".to_string(), Value::String(method.to_string()));
+                            req_dict
+                                .insert("method".to_string(), Value::String(method.to_string()));
                             req_dict.insert("path".to_string(), Value::String(path.clone()));
                             req_dict.insert("body".to_string(), Value::String(body_content));
 
@@ -2604,35 +2889,49 @@ impl Interpreter {
                             let req_value = Value::Dict(req_dict);
 
                             // Call handler with request
-                            let response_val = self.call_function_value(asg, handler_val.clone(), req_value)?;
+                            let response_val =
+                                self.call_function_value(asg, handler_val.clone(), req_value)?;
 
                             // Process response
-                            let (status_code, content_type, body): (u32, String, String) = match response_val {
-                                Value::String(s) => (200, "text/html".to_string(), s),
-                                Value::Dict(d) => {
-                                    let status = match d.get("status") {
-                                        Some(Value::Int(s)) => *s as u32,
-                                        _ => 200,
-                                    };
-                                    let ctype = match d.get("content-type") {
-                                        Some(Value::String(s)) => s.clone(),
-                                        _ => "text/html".to_string(),
-                                    };
-                                    let body = match d.get("body") {
-                                        Some(Value::String(s)) => s.clone(),
-                                        Some(v) => v.format_display(),
-                                        _ => "".to_string(),
-                                    };
-                                    (status, ctype, body)
-                                }
-                                other => (200, "text/plain".to_string(), other.format_display()),
-                            };
+                            let (status_code, content_type, body): (u32, String, String) =
+                                match response_val {
+                                    Value::String(s) => (200, "text/html".to_string(), s),
+                                    Value::Dict(d) => {
+                                        let status = match d.get("status") {
+                                            Some(Value::Int(s)) => *s as u32,
+                                            _ => 200,
+                                        };
+                                        let ctype = match d.get("content-type") {
+                                            Some(Value::String(s)) => s.clone(),
+                                            _ => "text/html".to_string(),
+                                        };
+                                        let body = match d.get("body") {
+                                            Some(Value::String(s)) => s.clone(),
+                                            Some(v) => v.format_display(),
+                                            _ => "".to_string(),
+                                        };
+                                        (status, ctype, body)
+                                    }
+                                    other => {
+                                        (200, "text/plain".to_string(), other.format_display())
+                                    }
+                                };
 
-                            println!("[{}] {} {} -> {}", method, path.split('?').next().unwrap_or(&path), status_code, body.len());
+                            println!(
+                                "[{}] {} {} -> {}",
+                                method,
+                                path.split('?').next().unwrap_or(&path),
+                                status_code,
+                                body.len()
+                            );
 
                             let response = Response::from_string(body)
                                 .with_status_code(status_code as u16)
-                                .with_header(format!("Content-Type: {}", content_type).parse::<tiny_http::Header>().unwrap());
+                                .with_header(
+                                    format!("Content-Type: {}", content_type)
+                                        .parse::<tiny_http::Header>()
+                                        .unwrap(),
+                                );
                             request.respond(response).ok();
                         }
                         Value::Unit
@@ -2652,7 +2951,9 @@ impl Interpreter {
                 // Создание HTTP response (используется внутри handler)
                 let edges: Vec<_> = node.find_edges(EdgeType::ApplicationArgument);
                 if edges.len() != 3 {
-                    return Err(ASGError::InvalidOperation("http-response requires 3 arguments".to_string()));
+                    return Err(ASGError::InvalidOperation(
+                        "http-response requires 3 arguments".to_string(),
+                    ));
                 }
                 let status = self.ensure_evaluated(asg, edges[0].target_node_id)?;
                 let _headers = self.ensure_evaluated(asg, edges[1].target_node_id)?;
@@ -2701,17 +3002,27 @@ impl Interpreter {
             #[cfg(not(feature = "gui"))]
             NodeType::GuiRun => {
                 return Err(ASGError::InvalidOperation(
-                    "Native GUI requires 'gui' feature. Recompile with: cargo build --features gui".to_string()
+                    "Native GUI requires 'gui' feature. Recompile with: cargo build --features gui"
+                        .to_string(),
                 ));
             }
 
-            NodeType::GuiWindow | NodeType::GuiButton | NodeType::GuiTextField |
-            NodeType::GuiLabel | NodeType::GuiVBox | NodeType::GuiHBox | NodeType::GuiCanvas => {
+            NodeType::GuiWindow
+            | NodeType::GuiButton
+            | NodeType::GuiTextField
+            | NodeType::GuiLabel
+            | NodeType::GuiVBox
+            | NodeType::GuiHBox
+            | NodeType::GuiCanvas => {
                 // GUI widgets - возвращаем описание для gui-run
                 let mut widget = HashMap::new();
-                widget.insert("type".to_string(), Value::String(format!("{:?}", node.node_type)));
+                widget.insert(
+                    "type".to_string(),
+                    Value::String(format!("{:?}", node.node_type)),
+                );
 
-                let children: Vec<_> = node.find_edges(EdgeType::ApplicationArgument)
+                let children: Vec<_> = node
+                    .find_edges(EdgeType::ApplicationArgument)
                     .into_iter()
                     .filter_map(|e| self.ensure_evaluated(asg, e.target_node_id).ok())
                     .collect();
@@ -2745,7 +3056,6 @@ impl Interpreter {
             Ok(self.memo.get(&node_id).unwrap().clone())
         })
     }
-
 
     /// Проверить соответствие паттерна значению.
     /// Возвращает (matches: bool, bindings: Vec<(name, value)>)
@@ -2790,7 +3100,9 @@ impl Interpreter {
                     if bytes.len() >= 8 {
                         let pattern_val = f64::from_le_bytes(bytes[..8].try_into().unwrap());
                         match subject {
-                            Value::Float(f) => Ok(((*f - pattern_val).abs() < f64::EPSILON, vec![])),
+                            Value::Float(f) => {
+                                Ok(((*f - pattern_val).abs() < f64::EPSILON, vec![]))
+                            }
                             _ => Ok((false, vec![])),
                         }
                     } else {
@@ -2825,44 +3137,40 @@ impl Interpreter {
                 }
             }
 
-            NodeType::LiteralUnit => {
-                match subject {
-                    Value::Unit => Ok((true, vec![])),
-                    _ => Ok((false, vec![])),
-                }
-            }
+            NodeType::LiteralUnit => match subject {
+                Value::Unit => Ok((true, vec![])),
+                _ => Ok((false, vec![])),
+            },
 
             // Array pattern matching
-            NodeType::Array => {
-                match subject {
-                    Value::Array(arr) => {
-                        let pattern_elements: Vec<_> = pattern_node
-                            .find_edges(EdgeType::ArrayElement)
-                            .into_iter()
-                            .map(|e| e.target_node_id)
-                            .collect();
+            NodeType::Array => match subject {
+                Value::Array(arr) => {
+                    let pattern_elements: Vec<_> = pattern_node
+                        .find_edges(EdgeType::ArrayElement)
+                        .into_iter()
+                        .map(|e| e.target_node_id)
+                        .collect();
 
-                        if pattern_elements.len() != arr.len() {
+                    if pattern_elements.len() != arr.len() {
+                        return Ok((false, vec![]));
+                    }
+
+                    let mut all_bindings = vec![];
+                    for (i, elem_id) in pattern_elements.iter().enumerate() {
+                        let elem_node = asg
+                            .find_node(*elem_id)
+                            .ok_or(ASGError::NodeNotFound(*elem_id))?
+                            .clone();
+                        let (matches, bindings) = self.match_pattern(asg, &elem_node, &arr[i])?;
+                        if !matches {
                             return Ok((false, vec![]));
                         }
-
-                        let mut all_bindings = vec![];
-                        for (i, elem_id) in pattern_elements.iter().enumerate() {
-                            let elem_node = asg
-                                .find_node(*elem_id)
-                                .ok_or(ASGError::NodeNotFound(*elem_id))?
-                                .clone();
-                            let (matches, bindings) = self.match_pattern(asg, &elem_node, &arr[i])?;
-                            if !matches {
-                                return Ok((false, vec![]));
-                            }
-                            all_bindings.extend(bindings);
-                        }
-                        Ok((true, all_bindings))
+                        all_bindings.extend(bindings);
                     }
-                    _ => Ok((false, vec![])),
+                    Ok((true, all_bindings))
                 }
-            }
+                _ => Ok((false, vec![])),
+            },
 
             // Default: evaluate pattern and compare
             _ => {
@@ -2915,10 +3223,10 @@ impl Interpreter {
 
     /// Получить единственный операнд.
     fn get_single_operand(&mut self, asg: &ASG, node: &Node) -> ASGResult<Value> {
-        let edge = node
-            .edges
-            .first()
-            .ok_or(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument))?;
+        let edge = node.edges.first().ok_or(ASGError::MissingEdge(
+            node.id,
+            EdgeType::ApplicationArgument,
+        ))?;
         self.ensure_evaluated(asg, edge.target_node_id)
     }
 
@@ -2951,13 +3259,15 @@ impl Interpreter {
                 format!("[{}]", items.join(","))
             }
             Value::Dict(d) => {
-                let items: Vec<String> = d.iter()
+                let items: Vec<String> = d
+                    .iter()
                     .map(|(k, v)| format!("\"{}\":{}", k, self.value_to_json(v)))
                     .collect();
                 format!("{{{}}}", items.join(","))
             }
             Value::Record(fields) => {
-                let items: Vec<String> = fields.iter()
+                let items: Vec<String> = fields
+                    .iter()
                     .map(|(k, v)| format!("\"{}\":{}", k, self.value_to_json(v)))
                     .collect();
                 format!("{{{}}}", items.join(","))
@@ -2998,7 +3308,11 @@ impl Interpreter {
     /// Вызвать функцию (Function или ComposedFunction) с одним аргументом.
     fn call_function_value(&mut self, asg: &ASG, fn_val: Value, arg: Value) -> ASGResult<Value> {
         match fn_val {
-            Value::Function { params, body_id, captured } => {
+            Value::Function {
+                params,
+                body_id,
+                captured,
+            } => {
                 let saved_memo = std::mem::take(&mut self.memo);
                 let mut frame = CallFrame::default();
                 for (name, val) in &captured {
@@ -3030,7 +3344,12 @@ impl Interpreter {
     }
 
     /// Материализовать n элементов из lazy sequence.
-    fn take_from_lazy(&mut self, asg: &ASG, mut kind: LazySeqKind, n: usize) -> ASGResult<Vec<Value>> {
+    fn take_from_lazy(
+        &mut self,
+        asg: &ASG,
+        mut kind: LazySeqKind,
+        n: usize,
+    ) -> ASGResult<Vec<Value>> {
         let mut result = Vec::with_capacity(n);
 
         for _ in 0..n {
@@ -3052,9 +3371,7 @@ impl Interpreter {
                 *current = Box::new(next);
                 Ok(Some(val))
             }
-            LazySeqKind::Repeat(val) => {
-                Ok(Some((**val).clone()))
-            }
+            LazySeqKind::Repeat(val) => Ok(Some((**val).clone())),
             LazySeqKind::Cycle { arr, index } => {
                 if arr.is_empty() {
                     return Ok(None);
@@ -3064,28 +3381,28 @@ impl Interpreter {
                 Ok(Some(val))
             }
             LazySeqKind::Range { current, end, step } => {
-                if (*step > 0 && *current >= *end) || (*step < 0 && *current <= *end) || *step == 0 {
+                if (*step > 0 && *current >= *end) || (*step < 0 && *current <= *end) || *step == 0
+                {
                     return Ok(None);
                 }
                 let val = Value::Int(*current);
                 *current += *step;
                 Ok(Some(val))
             }
-            LazySeqKind::Map { func, source } => {
-                match self.next_lazy_element(asg, source)? {
-                    Some(val) => {
-                        let mapped = self.call_function_value(asg, (**func).clone(), val)?;
-                        Ok(Some(mapped))
-                    }
-                    None => Ok(None),
+            LazySeqKind::Map { func, source } => match self.next_lazy_element(asg, source)? {
+                Some(val) => {
+                    let mapped = self.call_function_value(asg, (**func).clone(), val)?;
+                    Ok(Some(mapped))
                 }
-            }
+                None => Ok(None),
+            },
             LazySeqKind::Filter { func, source } => {
                 // Keep getting elements until we find one that passes the filter
                 loop {
                     match self.next_lazy_element(asg, source)? {
                         Some(val) => {
-                            let result = self.call_function_value(asg, (**func).clone(), val.clone())?;
+                            let result =
+                                self.call_function_value(asg, (**func).clone(), val.clone())?;
                             match result {
                                 Value::Bool(true) => return Ok(Some(val)),
                                 Value::Bool(false) => continue,

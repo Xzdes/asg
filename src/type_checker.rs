@@ -10,7 +10,7 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::asg::{ASG, Node, NodeID};
+use crate::asg::{Node, NodeID, ASG};
 use crate::error::{ASGError, ASGResult};
 use crate::nodecodes::{EdgeType, NodeType};
 use crate::types::{SynType, SynTypeError};
@@ -66,7 +66,10 @@ impl Substitution {
                     ty.clone()
                 }
             }
-            SynType::Function { parameters, return_type } => SynType::Function {
+            SynType::Function {
+                parameters,
+                return_type,
+            } => SynType::Function {
                 parameters: parameters.iter().map(|p| self.apply(p)).collect(),
                 return_type: Box::new(self.apply(return_type)),
             },
@@ -75,7 +78,10 @@ impl Substitution {
                 body: Box::new(self.apply(body)),
             },
             SynType::Record(fields) => SynType::Record(
-                fields.iter().map(|(n, t)| (n.clone(), self.apply(t))).collect(),
+                fields
+                    .iter()
+                    .map(|(n, t)| (n.clone(), self.apply(t)))
+                    .collect(),
             ),
             SynType::Linear(inner) => SynType::Linear(Box::new(self.apply(inner))),
             SynType::SharedRef(inner) => SynType::SharedRef(Box::new(self.apply(inner))),
@@ -126,14 +132,15 @@ impl Substitution {
 fn occurs_check(var: &str, ty: &SynType) -> bool {
     match ty {
         SynType::TypeVariable(name) => name == var,
-        SynType::Function { parameters, return_type } => {
-            parameters.iter().any(|p| occurs_check(var, p)) || occurs_check(var, return_type)
-        }
+        SynType::Function {
+            parameters,
+            return_type,
+        } => parameters.iter().any(|p| occurs_check(var, p)) || occurs_check(var, return_type),
         SynType::ForAll { body, .. } => occurs_check(var, body),
         SynType::Record(fields) => fields.iter().any(|(_, t)| occurs_check(var, t)),
-        SynType::Linear(inner)
-        | SynType::SharedRef(inner)
-        | SynType::MutableRef(inner) => occurs_check(var, inner),
+        SynType::Linear(inner) | SynType::SharedRef(inner) | SynType::MutableRef(inner) => {
+            occurs_check(var, inner)
+        }
         SynType::Result { ok, err } => occurs_check(var, ok) || occurs_check(var, err),
         SynType::ErrorUnion(a, b) => occurs_check(var, a) || occurs_check(var, b),
         SynType::ADT { variants, .. } => variants
@@ -178,8 +185,14 @@ pub fn unify(t1: &SynType, t2: &SynType) -> Result<Substitution, SynTypeError> {
 
         // Функции
         (
-            SynType::Function { parameters: p1, return_type: r1 },
-            SynType::Function { parameters: p2, return_type: r2 },
+            SynType::Function {
+                parameters: p1,
+                return_type: r1,
+            },
+            SynType::Function {
+                parameters: p2,
+                return_type: r2,
+            },
         ) => {
             if p1.len() != p2.len() {
                 return Err(SynTypeError::Mismatch {
@@ -230,10 +243,7 @@ pub fn unify(t1: &SynType, t2: &SynType) -> Result<Substitution, SynTypeError> {
         | (SynType::MutableRef(inner1), SynType::MutableRef(inner2)) => unify(inner1, inner2),
 
         // Result типы
-        (
-            SynType::Result { ok: ok1, err: err1 },
-            SynType::Result { ok: ok2, err: err2 },
-        ) => {
+        (SynType::Result { ok: ok1, err: err1 }, SynType::Result { ok: ok2, err: err2 }) => {
             let s1 = unify(ok1, ok2)?;
             let s2 = unify(&s1.apply(err1), &s1.apply(err2))?;
             Ok(s1.compose(&s2))
@@ -345,19 +355,27 @@ impl TypeChecker {
             NodeType::LiteralUnit => SynType::Unit,
 
             // === Бинарные арифметические операции ===
-            NodeType::BinaryOperation | NodeType::Sub | NodeType::Mul | NodeType::Div | NodeType::Mod => {
+            NodeType::BinaryOperation
+            | NodeType::Sub
+            | NodeType::Mul
+            | NodeType::Div
+            | NodeType::Mod => {
                 let (t1, t2) = self.get_binary_operand_types(asg, node)?;
 
                 // Создаём переменную типа для результата
                 let result_type = fresh_type_var();
 
                 // Унифицируем первый операнд с результатом
-                let s1 = unify(&t1, &result_type).map_err(|e| ASGError::TypeError(e.to_string()))?;
+                let s1 =
+                    unify(&t1, &result_type).map_err(|e| ASGError::TypeError(e.to_string()))?;
                 self.substitution = self.substitution.compose(&s1);
 
                 // Унифицируем второй операнд с результатом
-                let s2 = unify(&self.substitution.apply(&t2), &self.substitution.apply(&result_type))
-                    .map_err(|e| ASGError::TypeError(e.to_string()))?;
+                let s2 = unify(
+                    &self.substitution.apply(&t2),
+                    &self.substitution.apply(&result_type),
+                )
+                .map_err(|e| ASGError::TypeError(e.to_string()))?;
                 self.substitution = self.substitution.compose(&s2);
 
                 self.substitution.apply(&result_type)
@@ -371,7 +389,12 @@ impl TypeChecker {
             }
 
             // === Операции сравнения ===
-            NodeType::Eq | NodeType::Ne | NodeType::Lt | NodeType::Le | NodeType::Gt | NodeType::Ge => {
+            NodeType::Eq
+            | NodeType::Ne
+            | NodeType::Lt
+            | NodeType::Le
+            | NodeType::Gt
+            | NodeType::Ge => {
                 let (t1, t2) = self.get_binary_operand_types(asg, node)?;
 
                 // Операнды должны быть одного типа
@@ -387,7 +410,8 @@ impl TypeChecker {
                 let (t1, t2) = self.get_binary_operand_types(asg, node)?;
 
                 // Оба операнда должны быть Bool
-                let s1 = unify(&t1, &SynType::Bool).map_err(|e| ASGError::TypeError(e.to_string()))?;
+                let s1 =
+                    unify(&t1, &SynType::Bool).map_err(|e| ASGError::TypeError(e.to_string()))?;
                 self.substitution = self.substitution.compose(&s1);
 
                 let s2 = unify(&self.substitution.apply(&t2), &SynType::Bool)
@@ -419,14 +443,16 @@ impl TypeChecker {
                 // Then и Else должны быть одного типа
                 let then_type = self.get_edge_target_type(asg, node, EdgeType::ThenBranch)?;
 
-                let else_type = if let Ok(t) = self.get_edge_target_type(asg, node, EdgeType::ElseBranch) {
-                    t
-                } else {
-                    // Если нет else, результат — Unit
-                    SynType::Unit
-                };
+                let else_type =
+                    if let Ok(t) = self.get_edge_target_type(asg, node, EdgeType::ElseBranch) {
+                        t
+                    } else {
+                        // Если нет else, результат — Unit
+                        SynType::Unit
+                    };
 
-                let s = unify(&then_type, &else_type).map_err(|e| ASGError::TypeError(e.to_string()))?;
+                let s = unify(&then_type, &else_type)
+                    .map_err(|e| ASGError::TypeError(e.to_string()))?;
                 self.substitution = self.substitution.compose(&s);
 
                 self.substitution.apply(&then_type)
@@ -434,17 +460,20 @@ impl TypeChecker {
 
             // === Функция ===
             NodeType::Function => {
-                let func_name = node.get_name().unwrap_or_else(|| format!("anon_{}", node.id));
+                let func_name = node
+                    .get_name()
+                    .unwrap_or_else(|| format!("anon_{}", node.id));
 
                 // Собираем типы параметров
                 let param_types = self.get_function_parameters(asg, node)?;
 
                 // Тип тела функции
-                let body_type = if let Ok(t) = self.get_edge_target_type(asg, node, EdgeType::FunctionBody) {
-                    t
-                } else {
-                    SynType::Unit
-                };
+                let body_type =
+                    if let Ok(t) = self.get_edge_target_type(asg, node, EdgeType::FunctionBody) {
+                        t
+                    } else {
+                        SynType::Unit
+                    };
 
                 let func_type = SynType::Function {
                     parameters: param_types,
@@ -463,7 +492,10 @@ impl TypeChecker {
                 let arg_types = self.get_call_arguments(asg, node)?;
 
                 match &func_type {
-                    SynType::Function { parameters, return_type } => {
+                    SynType::Function {
+                        parameters,
+                        return_type,
+                    } => {
                         if parameters.len() != arg_types.len() {
                             return Err(ASGError::TypeError(format!(
                                 "Expected {} arguments, got {}",
@@ -474,8 +506,11 @@ impl TypeChecker {
 
                         // Унифицируем аргументы с параметрами
                         for (param, arg) in parameters.iter().zip(arg_types.iter()) {
-                            let s = unify(&self.substitution.apply(param), &self.substitution.apply(arg))
-                                .map_err(|e| ASGError::TypeError(e.to_string()))?;
+                            let s = unify(
+                                &self.substitution.apply(param),
+                                &self.substitution.apply(arg),
+                            )
+                            .map_err(|e| ASGError::TypeError(e.to_string()))?;
                             self.substitution = self.substitution.compose(&s);
                         }
 
@@ -506,11 +541,12 @@ impl TypeChecker {
             NodeType::Variable => {
                 let var_name = node.get_name().ok_or(ASGError::MissingPayload(node.id))?;
 
-                let value_type = if let Ok(t) = self.get_edge_target_type(asg, node, EdgeType::VarValue) {
-                    t
-                } else {
-                    fresh_type_var()
-                };
+                let value_type =
+                    if let Ok(t) = self.get_edge_target_type(asg, node, EdgeType::VarValue) {
+                        t
+                    } else {
+                        fresh_type_var()
+                    };
 
                 self.context.insert_var(var_name, value_type.clone());
                 value_type
@@ -539,13 +575,17 @@ impl TypeChecker {
             }
 
             // === Тензоры ===
-            NodeType::LiteralTensor | NodeType::TensorAdd | NodeType::TensorMul | NodeType::TensorMatMul | NodeType::TensorGrad => {
-                SynType::Foreign("Tensor".to_string())
-            }
+            NodeType::LiteralTensor
+            | NodeType::TensorAdd
+            | NodeType::TensorMul
+            | NodeType::TensorMatMul
+            | NodeType::TensorGrad => SynType::Foreign("Tensor".to_string()),
 
             // === Параметр функции ===
             NodeType::Parameter => {
-                let param_name = node.get_name().unwrap_or_else(|| format!("param_{}", node.id));
+                let param_name = node
+                    .get_name()
+                    .unwrap_or_else(|| format!("param_{}", node.id));
 
                 // Создаём переменную типа для параметра
                 let param_type = fresh_type_var();
@@ -579,7 +619,8 @@ impl TypeChecker {
                     SynType::Foreign("Array".to_string())
                 } else {
                     // Все элементы должны быть одного типа
-                    let first_type = self.get_edge_target_type(asg, node, EdgeType::ArrayElement)?;
+                    let first_type =
+                        self.get_edge_target_type(asg, node, EdgeType::ArrayElement)?;
                     for edge in element_edges.iter().skip(1) {
                         let elem_node = asg
                             .find_node(edge.target_node_id)
@@ -619,7 +660,11 @@ impl TypeChecker {
     // === Вспомогательные методы ===
 
     /// Получить типы двух операндов для бинарной операции.
-    fn get_binary_operand_types(&mut self, asg: &ASG, node: &Node) -> ASGResult<(SynType, SynType)> {
+    fn get_binary_operand_types(
+        &mut self,
+        asg: &ASG,
+        node: &Node,
+    ) -> ASGResult<(SynType, SynType)> {
         let edges: Vec<_> = node
             .edges
             .iter()
@@ -631,7 +676,10 @@ impl TypeChecker {
             .collect();
 
         if edges.len() < 2 {
-            return Err(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument));
+            return Err(ASGError::MissingEdge(
+                node.id,
+                EdgeType::ApplicationArgument,
+            ));
         }
 
         let n1 = asg
@@ -649,10 +697,10 @@ impl TypeChecker {
 
     /// Получить тип единственного операнда.
     fn get_unary_operand_type(&mut self, asg: &ASG, node: &Node) -> ASGResult<SynType> {
-        let edge = node
-            .edges
-            .first()
-            .ok_or(ASGError::MissingEdge(node.id, EdgeType::ApplicationArgument))?;
+        let edge = node.edges.first().ok_or(ASGError::MissingEdge(
+            node.id,
+            EdgeType::ApplicationArgument,
+        ))?;
         let target = asg
             .find_node(edge.target_node_id)
             .ok_or(ASGError::NodeNotFound(edge.target_node_id))?;
@@ -695,7 +743,10 @@ impl TypeChecker {
         let arg_edges: Vec<_> = node
             .edges
             .iter()
-            .filter(|e| e.edge_type == EdgeType::CallArgument || e.edge_type == EdgeType::ApplicationArgument)
+            .filter(|e| {
+                e.edge_type == EdgeType::CallArgument
+                    || e.edge_type == EdgeType::ApplicationArgument
+            })
             .collect();
 
         let mut types = Vec::new();

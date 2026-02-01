@@ -1,7 +1,7 @@
 //! Определения ошибок для ASG.
 
-use thiserror::Error;
 use crate::nodecodes::EdgeType;
+use thiserror::Error;
 
 /// Основной тип `Result` для библиотеки.
 pub type ASGResult<T> = Result<T, ASGError>;
@@ -28,7 +28,6 @@ pub enum ASGError {
     InvalidOperation(String),
 
     // === Новые ошибки для расширенной функциональности ===
-
     #[error("Effect error: {0}")]
     Effect(String),
 

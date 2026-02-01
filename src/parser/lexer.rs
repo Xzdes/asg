@@ -7,8 +7,8 @@ use super::token::{Span, Spanned, Token};
 
 /// Внутренние токены для logos.
 #[derive(Logos, Debug, Clone, PartialEq)]
-#[logos(skip r"[ \t\n\r]+")]  // Пропускаем пробелы
-#[logos(skip r";[^\n]*")]     // Пропускаем комментарии ; до конца строки
+#[logos(skip r"[ \t\n\r]+")] // Пропускаем пробелы
+#[logos(skip r";[^\n]*")] // Пропускаем комментарии ; до конца строки
 enum LogosToken {
     #[token("(")]
     LParen,
@@ -226,14 +226,8 @@ mod tests {
             lexer.next_token().unwrap().value,
             Token::Symbol(s) if s == "+"
         ));
-        assert!(matches!(
-            lexer.next_token().unwrap().value,
-            Token::Int(1)
-        ));
-        assert!(matches!(
-            lexer.next_token().unwrap().value,
-            Token::Int(2)
-        ));
+        assert!(matches!(lexer.next_token().unwrap().value, Token::Int(1)));
+        assert!(matches!(lexer.next_token().unwrap().value, Token::Int(2)));
         assert!(matches!(lexer.next_token().unwrap().value, Token::RParen));
         assert!(matches!(lexer.next_token().unwrap().value, Token::Eof));
     }
@@ -250,10 +244,7 @@ mod tests {
     #[test]
     fn test_lexer_comments() {
         let mut lexer = Lexer::new("; comment\n42");
-        assert!(matches!(
-            lexer.next_token().unwrap().value,
-            Token::Int(42)
-        ));
+        assert!(matches!(lexer.next_token().unwrap().value, Token::Int(42)));
     }
 
     #[test]

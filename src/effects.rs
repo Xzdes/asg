@@ -25,8 +25,8 @@ pub fn perform_console_output(message: &str) -> ASGResult<()> {
 
 /// Эффект: чтение из файла.
 pub fn perform_fs_read(path: &str) -> ASGResult<String> {
-    let mut file = File::open(path)
-        .map_err(|e| ASGError::Effect(format!("Failed to open file: {}", e)))?;
+    let mut file =
+        File::open(path).map_err(|e| ASGError::Effect(format!("Failed to open file: {}", e)))?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .map_err(|e| ASGError::Effect(format!("Failed to read file: {}", e)))?;

@@ -18,17 +18,17 @@
 //! (import "math" :only (square PI))  ; выборочно
 //! ```
 
+mod loader;
 mod registry;
 mod resolver;
-mod loader;
 
+pub use loader::ModuleLoader;
 pub use registry::{Module, ModuleRegistry};
 pub use resolver::{ModuleResolver, ResolveStrategy};
-pub use loader::ModuleLoader;
 
 use std::path::PathBuf;
 
-use crate::asg::{ASG, NodeID};
+use crate::asg::{NodeID, ASG};
 use crate::interpreter::Value;
 
 /// Экспортируемое определение из модуля.

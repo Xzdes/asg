@@ -152,7 +152,10 @@ impl ASGGuiApp {
                 }
             }
             Widget::TextField { id, value: _ } => {
-                let text = self.text_fields.entry(id.clone()).or_insert_with(String::new);
+                let text = self
+                    .text_fields
+                    .entry(id.clone())
+                    .or_insert_with(String::new);
                 ui.text_edit_singleline(text);
             }
             Widget::VBox { children } => {
@@ -170,15 +173,9 @@ impl ASGGuiApp {
                 });
             }
             Widget::Canvas { width, height } => {
-                let (response, painter) = ui.allocate_painter(
-                    egui::Vec2::new(*width, *height),
-                    egui::Sense::hover(),
-                );
-                painter.rect_filled(
-                    response.rect,
-                    0.0,
-                    egui::Color32::from_rgb(30, 30, 50),
-                );
+                let (response, painter) =
+                    ui.allocate_painter(egui::Vec2::new(*width, *height), egui::Sense::hover());
+                painter.rect_filled(response.rect, 0.0, egui::Color32::from_rgb(30, 30, 50));
             }
             Widget::Window { children, .. } => {
                 for child in children {
@@ -286,10 +283,7 @@ impl eframe::App for CalculatorApp {
                                 ui.label("");
                             } else {
                                 let size = egui::Vec2::new(50.0, 40.0);
-                                if ui
-                                    .add_sized(size, egui::Button::new(btn))
-                                    .clicked()
-                                {
+                                if ui.add_sized(size, egui::Button::new(btn)).clicked() {
                                     match btn {
                                         "C" => {
                                             self.display.clear();

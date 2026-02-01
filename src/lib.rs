@@ -34,34 +34,34 @@
 // === Основные модули ===
 pub mod asg;
 pub mod error;
-pub mod parser;
 pub mod interpreter;
 pub mod nodecodes;
-pub mod runtime;
 pub mod ops;
-pub mod types;
+pub mod parser;
+pub mod runtime;
 pub mod type_checker;
+pub mod types;
 
 // === Компиляторные бэкенды ===
-pub mod llvm_backend;
-pub mod wasm_backend;
-pub mod wasm;  // WASM GC и runtime
 pub mod c_backend;
-pub mod js_backend;
 pub mod compiler;
+pub mod js_backend;
+pub mod llvm_backend;
+pub mod wasm; // WASM GC и runtime
+pub mod wasm_backend;
 
 // === GUI модуль (requires feature 'gui') ===
 #[cfg(feature = "gui")]
 pub mod gui;
 
 // === Дополнительные модули ===
-pub mod effects;
-pub mod ffi;
-pub mod modules;
+pub mod ai_api;
 pub mod concurrency;
 pub mod concurrency_async;
+pub mod effects;
+pub mod ffi;
 pub mod macros;
-pub mod ai_api;
+pub mod modules;
 
 // === Система доказательств ===
 pub mod proof;
@@ -69,10 +69,10 @@ pub mod proof_dsl;
 pub mod proof_smt;
 
 // === Re-exports для удобства ===
+pub use asg::{Edge, Node, NodeID, ASG};
 pub use error::{ASGError, ASGResult};
-pub use asg::{ASG, Node, Edge, NodeID};
-pub use nodecodes::{NodeType, EdgeType};
-pub use types::SynType;
 pub use interpreter::{Interpreter, Value};
-pub use type_checker::{check_types, infer_types, TypeChecker};
+pub use nodecodes::{EdgeType, NodeType};
 pub use parser::{parse, parse_expr};
+pub use type_checker::{check_types, infer_types, TypeChecker};
+pub use types::SynType;

@@ -3,7 +3,7 @@
 //! Использование:
 //!   asg              - запустить REPL
 //!   asg <file.asg>   - выполнить файл
-//!   asg -e "<expr>"  - выполнить выражение
+//!   asg -e "expr"    - выполнить выражение
 //!   asg --help       - справка
 
 use rustyline::error::ReadlineError;
@@ -346,18 +346,16 @@ fn show_ast(expr: &str) {
 
 fn show_type(expr: &str, _interpreter: &mut Interpreter) {
     match parse_expr(expr) {
-        Ok((asg, root_id)) => {
-            match asg_lang::type_checker::infer_types(&asg) {
-                Ok(type_info) => {
-                    if let Some(ty) = type_info.get(&root_id) {
-                        println!("{:?}", ty);
-                    } else {
-                        println!("Type not found for root node");
-                    }
+        Ok((asg, root_id)) => match asg_lang::type_checker::infer_types(&asg) {
+            Ok(type_info) => {
+                if let Some(ty) = type_info.get(&root_id) {
+                    println!("{:?}", ty);
+                } else {
+                    println!("Type not found for root node");
                 }
-                Err(e) => eprintln!("Type error: {}", e),
             }
-        }
+            Err(e) => eprintln!("Type error: {}", e),
+        },
         Err(e) => eprintln!("Parse error: {}", e),
     }
 }

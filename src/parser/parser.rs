@@ -162,7 +162,10 @@ impl<'a> Parser<'a> {
                 "expression",
                 &Token::RParen,
             )),
-            Token::Eof => Err(ParseError::unexpected_eof(token.span, "expected expression")),
+            Token::Eof => Err(ParseError::unexpected_eof(
+                token.span,
+                "expected expression",
+            )),
         }
     }
 

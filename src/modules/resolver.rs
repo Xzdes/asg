@@ -95,14 +95,12 @@ impl ModuleResolver {
 
         // Разрешаем по стратегии
         let result = match self.strategy {
-            ResolveStrategy::LocalFirst => {
-                self.resolve_local(module_name)
-                    .or_else(|_| self.resolve_stdlib(module_name))
-            }
-            ResolveStrategy::StdlibFirst => {
-                self.resolve_stdlib(module_name)
-                    .or_else(|_| self.resolve_local(module_name))
-            }
+            ResolveStrategy::LocalFirst => self
+                .resolve_local(module_name)
+                .or_else(|_| self.resolve_stdlib(module_name)),
+            ResolveStrategy::StdlibFirst => self
+                .resolve_stdlib(module_name)
+                .or_else(|_| self.resolve_local(module_name)),
             ResolveStrategy::LocalOnly => self.resolve_local(module_name),
             ResolveStrategy::StdlibOnly => self.resolve_stdlib(module_name),
         };
@@ -195,12 +193,15 @@ impl ModuleResolver {
             let mut remaining = module_name;
 
             while remaining.starts_with("../") {
-                current = current.parent().ok_or_else(|| {
-                    ASGError::ModuleNotFound(format!(
-                        "cannot go above root directory: {}",
-                        module_name
-                    ))
-                })?.to_path_buf();
+                current = current
+                    .parent()
+                    .ok_or_else(|| {
+                        ASGError::ModuleNotFound(format!(
+                            "cannot go above root directory: {}",
+                            module_name
+                        ))
+                    })?
+                    .to_path_buf();
                 remaining = &remaining[3..];
             }
 
@@ -211,9 +212,15 @@ impl ModuleResolver {
         };
 
         // Ищем файл с расширением
-        self.find_module_in_dir(resolved.parent().unwrap_or(Path::new(".")),
-                                resolved.file_name().unwrap_or_default().to_str().unwrap_or(""))
-            .ok_or_else(|| ASGError::ModuleNotFound(module_name.to_string()))
+        self.find_module_in_dir(
+            resolved.parent().unwrap_or(Path::new(".")),
+            resolved
+                .file_name()
+                .unwrap_or_default()
+                .to_str()
+                .unwrap_or(""),
+        )
+        .ok_or_else(|| ASGError::ModuleNotFound(module_name.to_string()))
     }
 
     /// Проверить, является ли путь stdlib модулем.
@@ -256,7 +263,10 @@ mod tests {
     fn test_resolve_local_module() {
         let dir = tempdir().unwrap();
         let module_path = dir.path().join("math.asg");
-        File::create(&module_path).unwrap().write_all(b"(module math)").unwrap();
+        File::create(&module_path)
+            .unwrap()
+            .write_all(b"(module math)")
+            .unwrap();
 
         let mut resolver = ModuleResolver::with_search_paths(vec![dir.path().to_path_buf()]);
         let result = resolver.resolve("math");
@@ -271,7 +281,10 @@ mod tests {
         let nested_dir = dir.path().join("utils");
         fs::create_dir(&nested_dir).unwrap();
         let module_path = nested_dir.join("mod.asg");
-        File::create(&module_path).unwrap().write_all(b"(module utils)").unwrap();
+        File::create(&module_path)
+            .unwrap()
+            .write_all(b"(module utils)")
+            .unwrap();
 
         let mut resolver = ModuleResolver::with_search_paths(vec![dir.path().to_path_buf()]);
         let result = resolver.resolve("utils");
@@ -292,7 +305,10 @@ mod tests {
     fn test_cache() {
         let dir = tempdir().unwrap();
         let module_path = dir.path().join("cached.asg");
-        File::create(&module_path).unwrap().write_all(b"(module cached)").unwrap();
+        File::create(&module_path)
+            .unwrap()
+            .write_all(b"(module cached)")
+            .unwrap();
 
         let mut resolver = ModuleResolver::with_search_paths(vec![dir.path().to_path_buf()]);
 
