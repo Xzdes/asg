@@ -1,0 +1,307 @@
+; ASG Validation Module
+; Валидация данных и форм.
+
+(module validation
+
+  ; === Базовые проверки типов ===
+
+  ; Проверить что значение - строка
+  (fn string? (x)
+    (== (type-of x) "string"))
+
+  ; Проверить что значение - число
+  (fn number? (x)
+    (or (== (type-of x) "int") (== (type-of x) "float")))
+
+  ; Проверить что значение - целое число
+  (fn int? (x)
+    (== (type-of x) "int"))
+
+  ; Проверить что значение - дробное число
+  (fn float? (x)
+    (== (type-of x) "float"))
+
+  ; Проверить что значение - массив
+  (fn array? (x)
+    (== (type-of x) "array"))
+
+  ; Проверить что значение - словарь
+  (fn dict? (x)
+    (== (type-of x) "dict"))
+
+  ; Проверить что значение - булево
+  (fn bool? (x)
+    (or (== x true) (== x false)))
+
+  ; Проверить что значение - функция
+  (fn function? (x)
+    (== (type-of x) "function"))
+
+  ; === Проверки на пустоту ===
+
+  ; Проверить что nil
+  (fn nil? (x)
+    (== x nil))
+
+  ; Проверить что не nil
+  (fn present? (x)
+    (!= x nil))
+
+  ; Проверить что пустой (строка, массив, словарь)
+  (fn empty? (x)
+    (if (string? x)
+      (== (str-length x) 0)
+      (if (array? x)
+        (== (length x) 0)
+        (if (dict? x)
+          (== (dict-size x) 0)
+          false))))
+
+  ; Проверить что не пустой
+  (fn not-empty? (x)
+    (not (empty? x)))
+
+  ; === Числовые проверки ===
+
+  ; Проверить что число в диапазоне
+  (fn in-range? (x min max)
+    (and (>= x min) (<= x max)))
+
+  ; Проверить что положительное
+  (fn positive? (x)
+    (> x 0))
+
+  ; Проверить что отрицательное
+  (fn negative? (x)
+    (< x 0))
+
+  ; Проверить что ноль
+  (fn zero? (x)
+    (== x 0))
+
+  ; Проверить что не ноль
+  (fn non-zero? (x)
+    (!= x 0))
+
+  ; Проверить что целое (включая float без дробной части)
+  (fn integer? (x)
+    (if (int? x)
+      true
+      (if (float? x)
+        (== x (floor x))
+        false)))
+
+  ; Проверить что натуральное число (> 0)
+  (fn natural? (x)
+    (and (integer? x) (positive? x)))
+
+  ; Проверить что неотрицательное
+  (fn non-negative? (x)
+    (>= x 0))
+
+  ; === Строковые проверки ===
+
+  ; Проверить минимальную длину
+  (fn min-length? (s min)
+    (>= (str-length s) min))
+
+  ; Проверить максимальную длину
+  (fn max-length? (s max)
+    (<= (str-length s) max))
+
+  ; Проверить длину в диапазоне
+  (fn length-between? (s min max)
+    (let len (str-length s))
+    (and (>= len min) (<= len max)))
+
+  ; Проверить что только буквы
+  (fn alpha? (s)
+    (regex-match "^[a-zA-Z]+$" s))
+
+  ; Проверить что только буквы и цифры
+  (fn alphanumeric? (s)
+    (regex-match "^[a-zA-Z0-9]+$" s))
+
+  ; Проверить что только цифры
+  (fn digits? (s)
+    (regex-match "^[0-9]+$" s))
+
+  ; Проверить что валидный идентификатор
+  (fn identifier? (s)
+    (regex-match "^[a-zA-Z_][a-zA-Z0-9_]*$" s))
+
+  ; Проверить что строка без пробелов
+  (fn no-whitespace? (s)
+    (not (regex-contains "\\s" s)))
+
+  ; Проверить что строка только из пробелов
+  (fn blank? (s)
+    (regex-match "^\\s*$" s))
+
+  ; === Форматы данных ===
+
+  ; Проверить email
+  (fn email? (s)
+    (regex-match "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" s))
+
+  ; Проверить URL
+  (fn url? (s)
+    (regex-match "^https?://[^\\s]+$" s))
+
+  ; Проверить телефон (международный)
+  (fn phone? (s)
+    (regex-match "^\\+?[1-9]\\d{1,14}$" s))
+
+  ; Проверить UUID
+  (fn uuid? (s)
+    (regex-match "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" s))
+
+  ; Проверить IPv4
+  (fn ipv4? (s)
+    (regex-match "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" s))
+
+  ; Проверить HEX цвет
+  (fn hex-color? (s)
+    (regex-match "^#(?:[0-9a-fA-F]{3}){1,2}$" s))
+
+  ; Проверить дату ISO (YYYY-MM-DD)
+  (fn date-iso? (s)
+    (regex-match "^\\d{4}-\\d{2}-\\d{2}$" s))
+
+  ; Проверить время 24ч (HH:MM или HH:MM:SS)
+  (fn time-24h? (s)
+    (regex-match "^(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?$" s))
+
+  ; === Пароли ===
+
+  ; Проверить силу пароля (базовая)
+  (fn password-basic? (s)
+    (min-length? s 8))
+
+  ; Проверить силу пароля (средняя)
+  (fn password-medium? (s)
+    (and
+      (min-length? s 8)
+      (regex-contains "[A-Z]" s)
+      (regex-contains "[a-z]" s)
+      (regex-contains "[0-9]" s)))
+
+  ; Проверить силу пароля (сильная)
+  (fn password-strong? (s)
+    (and
+      (min-length? s 12)
+      (regex-contains "[A-Z]" s)
+      (regex-contains "[a-z]" s)
+      (regex-contains "[0-9]" s)
+      (regex-contains "[!@#$%^&*(),.?\":{}|<>]" s)))
+
+  ; === Массивы ===
+
+  ; Проверить что массив непустой
+  (fn array-not-empty? (arr)
+    (and (array? arr) (> (length arr) 0)))
+
+  ; Проверить минимальную длину массива
+  (fn array-min-length? (arr min)
+    (and (array? arr) (>= (length arr) min)))
+
+  ; Проверить максимальную длину массива
+  (fn array-max-length? (arr max)
+    (and (array? arr) (<= (length arr) max)))
+
+  ; Проверить что все элементы удовлетворяют предикату
+  (fn all? (arr pred)
+    (reduce arr true (lambda (acc x) (and acc (pred x)))))
+
+  ; Проверить что хотя бы один элемент удовлетворяет предикату
+  (fn any? (arr pred)
+    (reduce arr false (lambda (acc x) (or acc (pred x)))))
+
+  ; Проверить что массив содержит уникальные элементы
+  (fn unique? (arr)
+    (== (length arr) (length (unique arr))))
+
+  ; === Словари ===
+
+  ; Проверить наличие ключа
+  (fn has-key? (d key)
+    (and (dict? d) (dict-has d key)))
+
+  ; Проверить наличие всех ключей
+  (fn has-keys? (d keys)
+    (all? keys (lambda (k) (dict-has d k))))
+
+  ; Получить отсутствующие ключи
+  (fn missing-keys (d keys)
+    (filter keys (lambda (k) (not (dict-has d k)))))
+
+  ; === Составные валидаторы ===
+
+  ; Создать валидатор из набора правил
+  ; Правило: (dict "field" "name" "check" pred "message" "error text")
+  (fn make-validator (rules)
+    (lambda (data)
+      (let errors (array))
+      (for rule rules
+        (let field (dict-get rule "field"))
+        (let check (dict-get rule "check"))
+        (let message (dict-get rule "message"))
+        (let value (dict-get data field))
+        (if (not (check value))
+          (set errors (append errors (dict "field" field "message" message)))))
+      (if (== (length errors) 0)
+        (dict "valid" true "errors" (array))
+        (dict "valid" false "errors" errors))))
+
+  ; Проверить данные и получить результат
+  (fn validate (validator data)
+    (validator data))
+
+  ; Проверить что результат валидный
+  (fn valid? (result)
+    (dict-get result "valid"))
+
+  ; Получить ошибки
+  (fn get-errors (result)
+    (dict-get result "errors"))
+
+  ; Получить первую ошибку
+  (fn first-error (result)
+    (let errors (get-errors result))
+    (if (> (length errors) 0)
+      (first errors)
+      nil))
+
+  ; === Примеры валидаторов ===
+
+  ; Валидатор пользователя
+  (let user-validator (make-validator (array
+    (dict "field" "email" "check" email? "message" "Invalid email format")
+    (dict "field" "password" "check" password-medium? "message" "Password must be 8+ chars with upper, lower, digit")
+    (dict "field" "name" "check" not-empty? "message" "Name is required")
+    (dict "field" "age" "check" (lambda (x) (and (number? x) (in-range? x 18 120))) "message" "Age must be 18-120"))))
+
+  ; === Экспорты ===
+  (export
+    ; Type checks
+    string? number? int? float? array? dict? bool? function?
+    nil? present? empty? not-empty?
+    ; Number checks
+    in-range? positive? negative? zero? non-zero?
+    integer? natural? non-negative?
+    ; String checks
+    min-length? max-length? length-between?
+    alpha? alphanumeric? digits? identifier? no-whitespace? blank?
+    ; Format checks
+    email? url? phone? uuid? ipv4? hex-color? date-iso? time-24h?
+    ; Password checks
+    password-basic? password-medium? password-strong?
+    ; Array checks
+    array-not-empty? array-min-length? array-max-length?
+    all? any? unique?
+    ; Dict checks
+    has-key? has-keys? missing-keys
+    ; Validators
+    make-validator validate valid? get-errors first-error
+    ; Example validators
+    user-validator))

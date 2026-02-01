@@ -1,0 +1,252 @@
+; ASG File Module
+; Расширенные операции с файлами и директориями.
+
+(module file
+
+  ; === Чтение файлов ===
+
+  ; Прочитать файл как строку
+  (fn read (path)
+    (read-file path))
+
+  ; Прочитать файл как массив строк
+  (fn read-lines (path)
+    (str-split (read-file path) "\n"))
+
+  ; Прочитать JSON файл
+  (fn read-json (path)
+    (json-parse (read-file path)))
+
+  ; Прочитать файл с обработкой ошибок
+  (fn read-safe (path default)
+    (try
+      (read-file path)
+      (catch e default)))
+
+  ; Прочитать первые N строк
+  (fn read-head (path n)
+    (take (read-lines path) n))
+
+  ; Прочитать последние N строк
+  (fn read-tail (path n)
+    (let lines (read-lines path))
+    (drop lines (max 0 (- (length lines) n))))
+
+  ; === Запись файлов ===
+
+  ; Записать строку в файл
+  (fn write (path content)
+    (write-file path content))
+
+  ; Записать массив строк в файл
+  (fn write-lines (path lines)
+    (write-file path (str-join lines "\n")))
+
+  ; Записать JSON в файл
+  (fn write-json (path data)
+    (write-file path (json-stringify data)))
+
+  ; Записать JSON с отступами
+  (fn write-json-pretty (path data)
+    (write-file path (json-stringify-pretty data 2)))
+
+  ; Добавить строку в файл
+  (fn append-line (path line)
+    (append-file path (concat line "\n")))
+
+  ; Добавить строки в файл
+  (fn append-lines (path lines)
+    (append-file path (concat (str-join lines "\n") "\n")))
+
+  ; === Проверки ===
+
+  ; Проверить существование файла
+  (fn exists? (path)
+    (file-exists path))
+
+  ; Проверить что это файл
+  (fn file? (path)
+    (and (exists? path) (not (is-directory path))))
+
+  ; Проверить что это директория
+  (fn directory? (path)
+    (is-directory path))
+
+  ; Проверить что файл пустой
+  (fn empty? (path)
+    (== (file-size path) 0))
+
+  ; Проверить что файл читаемый
+  (fn readable? (path)
+    (try
+      (do (read-file path) true)
+      (catch e false)))
+
+  ; === Метаданные ===
+
+  ; Получить размер файла
+  (fn size (path)
+    (file-size path))
+
+  ; Получить размер в человекочитаемом формате
+  (fn size-human (path)
+    (let bytes (file-size path))
+    (if (< bytes 1024)
+      (concat (str bytes) " B")
+      (if (< bytes 1048576)
+        (concat (str (round (/ bytes 1024))) " KB")
+        (if (< bytes 1073741824)
+          (concat (str (round (/ bytes 1048576))) " MB")
+          (concat (str (round (/ bytes 1073741824))) " GB")))))
+
+  ; Получить расширение файла
+  (fn extension (path)
+    (let parts (str-split path "."))
+    (if (> (length parts) 1)
+      (last parts)
+      ""))
+
+  ; Получить имя файла без пути
+  (fn basename (path)
+    (last (str-split path "/")))
+
+  ; Получить директорию файла
+  (fn dirname (path)
+    (let parts (str-split path "/"))
+    (str-join (take parts (- (length parts) 1)) "/"))
+
+  ; Получить имя без расширения
+  (fn name-without-ext (path)
+    (let base (basename path))
+    (let parts (str-split base "."))
+    (if (> (length parts) 1)
+      (str-join (take parts (- (length parts) 1)) ".")
+      base))
+
+  ; === Операции с путями ===
+
+  ; Объединить пути
+  (fn join-path (parts)
+    (str-join parts "/"))
+
+  ; Нормализовать путь (убрать ./ и ../)
+  (fn normalize (path)
+    (let parts (filter (str-split path "/") (lambda (p) (and (!= p "") (!= p ".")))))
+    (let result (array))
+    (for part parts
+      (if (== part "..")
+        (if (> (length result) 0)
+          (set result (take result (- (length result) 1))))
+        (set result (append result part))))
+    (join-path result))
+
+  ; Проверить что путь абсолютный
+  (fn absolute? (path)
+    (or
+      (str-starts-with path "/")
+      (regex-match "^[A-Za-z]:[\\\\/]" path)))
+
+  ; Проверить что путь относительный
+  (fn relative? (path)
+    (not (absolute? path)))
+
+  ; === Работа с директориями ===
+
+  ; Список файлов в директории
+  (fn list-dir (path)
+    (list-directory path))
+
+  ; Список только файлов (не директорий)
+  (fn list-files (path)
+    (filter (list-dir path) (lambda (p) (file? (join-path (array path p))))))
+
+  ; Список только директорий
+  (fn list-dirs (path)
+    (filter (list-dir path) (lambda (p) (directory? (join-path (array path p))))))
+
+  ; Список файлов с определённым расширением
+  (fn list-by-ext (path ext)
+    (filter (list-files path) (lambda (f) (== (extension f) ext))))
+
+  ; Рекурсивный список всех файлов
+  (fn list-recursive (path)
+    (let result (array))
+    (let items (list-dir path))
+    (for item items
+      (let full-path (join-path (array path item)))
+      (if (directory? full-path)
+        (set result (array-concat result (list-recursive full-path)))
+        (set result (append result full-path))))
+    result)
+
+  ; === Копирование и перемещение ===
+
+  ; Копировать файл
+  (fn copy (src dest)
+    (write dest (read src)))
+
+  ; Переместить файл
+  (fn move (src dest)
+    (do
+      (copy src dest)
+      (delete-file src)))
+
+  ; Переименовать файл
+  (fn rename (old-path new-path)
+    (move old-path new-path))
+
+  ; === Утилиты ===
+
+  ; Прочитать CSV файл
+  (fn read-csv (path separator)
+    (let lines (read-lines path))
+    (map lines (lambda (line) (str-split line separator))))
+
+  ; Записать CSV файл
+  (fn write-csv (path data separator)
+    (let lines (map data (lambda (row) (str-join row separator))))
+    (write-lines path lines))
+
+  ; Прочитать properties файл (key=value)
+  (fn read-properties (path)
+    (let lines (filter (read-lines path)
+                       (lambda (l) (and (!= l "") (not (str-starts-with l "#"))))))
+    (reduce lines (dict)
+      (lambda (d line)
+        (let parts (str-split line "="))
+        (if (>= (length parts) 2)
+          (dict-set d (str-trim (first parts)) (str-trim (str-join (drop parts 1) "=")))
+          d))))
+
+  ; Записать properties файл
+  (fn write-properties (path props)
+    (let lines (map (dict-keys props)
+                    (lambda (k) (concat k "=" (dict-get props k)))))
+    (write-lines path lines))
+
+  ; Создать временный файл с содержимым
+  (fn with-temp-file (content fn)
+    (let path (concat "/tmp/asg-temp-" (str (random-int 100000 999999))))
+    (write path content)
+    (let result (fn path))
+    (delete-file path)
+    result)
+
+  ; === Экспорты ===
+  (export
+    ; Reading
+    read read-lines read-json read-safe read-head read-tail
+    ; Writing
+    write write-lines write-json write-json-pretty append-line append-lines
+    ; Checks
+    exists? file? directory? empty? readable?
+    ; Metadata
+    size size-human extension basename dirname name-without-ext
+    ; Path operations
+    join-path normalize absolute? relative?
+    ; Directory operations
+    list-dir list-files list-dirs list-by-ext list-recursive
+    ; Copy/Move
+    copy move rename
+    ; Utilities
+    read-csv write-csv read-properties write-properties with-temp-file))

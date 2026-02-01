@@ -1,0 +1,189 @@
+; ASG Regex Module
+; Регулярные выражения для обработки текста.
+; Примечание: требует встроенной поддержки regex в интерпретаторе.
+
+(module regex
+
+  ; === Базовые операции ===
+
+  ; Проверить совпадение (полное)
+  ; (regex-match pattern text) -> bool
+  ; Пример: (regex-match "^hello" "hello world") => true
+  (fn match (pattern text)
+    (regex-match pattern text))
+
+  ; Проверить содержание паттерна
+  ; (regex-contains pattern text) -> bool
+  ; Пример: (regex-contains "\\d+" "abc123def") => true
+  (fn contains (pattern text)
+    (regex-contains pattern text))
+
+  ; === Поиск ===
+
+  ; Найти первое совпадение
+  ; (regex-find pattern text) -> string | nil
+  ; Пример: (regex-find "\\d+" "abc123def") => "123"
+  (fn find (pattern text)
+    (regex-find pattern text))
+
+  ; Найти все совпадения
+  ; (regex-find-all pattern text) -> array
+  ; Пример: (regex-find-all "\\d+" "a1b2c3") => ["1", "2", "3"]
+  (fn find-all (pattern text)
+    (regex-find-all pattern text))
+
+  ; Найти с позицией
+  ; (regex-find-pos pattern text) -> {start, end, match} | nil
+  (fn find-pos (pattern text)
+    (regex-find-pos pattern text))
+
+  ; === Замена ===
+
+  ; Заменить первое совпадение
+  ; (regex-replace pattern replacement text) -> string
+  ; Пример: (regex-replace "\\d+" "X" "a1b2c3") => "aXb2c3"
+  (fn replace-first (pattern replacement text)
+    (regex-replace pattern replacement text))
+
+  ; Заменить все совпадения
+  ; (regex-replace-all pattern replacement text) -> string
+  ; Пример: (regex-replace-all "\\d+" "X" "a1b2c3") => "aXbXcX"
+  (fn replace-all (pattern replacement text)
+    (regex-replace-all pattern replacement text))
+
+  ; Заменить с функцией
+  ; (regex-replace-fn pattern fn text) -> string
+  (fn replace-with (pattern fn text)
+    (let matches (find-all pattern text))
+    (reduce matches text
+      (lambda (txt m)
+        (str-replace txt m (fn m)))))
+
+  ; === Разбиение ===
+
+  ; Разбить строку по паттерну
+  ; (regex-split pattern text) -> array
+  ; Пример: (regex-split "\\s+" "a  b   c") => ["a", "b", "c"]
+  (fn split (pattern text)
+    (regex-split pattern text))
+
+  ; Разбить с лимитом
+  (fn split-n (pattern text n)
+    (take (split pattern text) n))
+
+  ; === Группы захвата ===
+
+  ; Получить группы из первого совпадения
+  ; (regex-groups pattern text) -> array | nil
+  ; Пример: (regex-groups "(\\d+)-(\\d+)" "123-456") => ["123-456", "123", "456"]
+  (fn groups (pattern text)
+    (regex-groups pattern text))
+
+  ; Получить именованные группы
+  ; (regex-named-groups pattern text) -> dict | nil
+  ; Пример: (regex-named-groups "(?P<year>\\d{4})-(?P<month>\\d{2})" "2024-01")
+  ;         => {"year": "2024", "month": "01"}
+  (fn named-groups (pattern text)
+    (regex-named-groups pattern text))
+
+  ; === Утилиты ===
+
+  ; Экранировать спецсимволы для использования как литерал
+  ; (regex-escape text) -> string
+  ; Пример: (regex-escape "hello.world") => "hello\\.world"
+  (fn escape (text)
+    (regex-escape text))
+
+  ; Проверить валидность паттерна
+  ; (regex-valid? pattern) -> bool
+  (fn valid? (pattern)
+    (try
+      (do (regex-match pattern "") true)
+      (catch e false)))
+
+  ; === Высокоуровневые функции ===
+
+  ; Извлечь все числа из текста
+  (fn extract-numbers (text)
+    (map (find-all "-?\\d+\\.?\\d*" text) parse-float))
+
+  ; Извлечь все email адреса
+  (fn extract-emails (text)
+    (find-all "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}" text))
+
+  ; Извлечь все URL
+  (fn extract-urls (text)
+    (find-all "https?://[^\\s<>\"']+" text))
+
+  ; Извлечь все хештеги
+  (fn extract-hashtags (text)
+    (find-all "#[a-zA-Z][a-zA-Z0-9_]*" text))
+
+  ; Извлечь все @упоминания
+  (fn extract-mentions (text)
+    (find-all "@[a-zA-Z][a-zA-Z0-9_]*" text))
+
+  ; Проверить email
+  (fn valid-email? (email)
+    (match "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" email))
+
+  ; Проверить URL
+  (fn valid-url? (url)
+    (match "^https?://[^\\s<>\"']+$" url))
+
+  ; Проверить телефон (международный формат)
+  (fn valid-phone? (phone)
+    (match "^\\+?[1-9]\\d{1,14}$" phone))
+
+  ; Проверить IPv4 адрес
+  (fn valid-ipv4? (ip)
+    (match "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" ip))
+
+  ; Удалить HTML теги
+  (fn strip-html (text)
+    (replace-all "<[^>]+>" "" text))
+
+  ; Нормализовать пробелы (множественные -> один)
+  (fn normalize-whitespace (text)
+    (str-trim (replace-all "\\s+" " " text)))
+
+  ; Преобразовать camelCase в snake_case
+  (fn camel-to-snake (text)
+    (str-lower (replace-all "([a-z])([A-Z])" "$1_$2" text)))
+
+  ; Преобразовать snake_case в camelCase
+  (fn snake-to-camel (text)
+    (replace-with "_([a-z])" str-upper text))
+
+  ; === Паттерны (константы) ===
+
+  (let PATTERN-EMAIL "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
+  (let PATTERN-URL "https?://[^\\s<>\"']+")
+  (let PATTERN-PHONE "\\+?[1-9]\\d{1,14}")
+  (let PATTERN-IPV4 "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)")
+  (let PATTERN-HEX-COLOR "#(?:[0-9a-fA-F]{3}){1,2}")
+  (let PATTERN-UUID "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+  (let PATTERN-DATE-ISO "\\d{4}-\\d{2}-\\d{2}")
+  (let PATTERN-TIME-24H "(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?")
+
+  ; === Экспорты ===
+  (export
+    ; Basic
+    match contains
+    ; Search
+    find find-all find-pos
+    ; Replace
+    replace-first replace-all replace-with
+    ; Split
+    split split-n
+    ; Groups
+    groups named-groups
+    ; Utils
+    escape valid?
+    ; High-level
+    extract-numbers extract-emails extract-urls extract-hashtags extract-mentions
+    valid-email? valid-url? valid-phone? valid-ipv4?
+    strip-html normalize-whitespace camel-to-snake snake-to-camel
+    ; Patterns
+    PATTERN-EMAIL PATTERN-URL PATTERN-PHONE PATTERN-IPV4
+    PATTERN-HEX-COLOR PATTERN-UUID PATTERN-DATE-ISO PATTERN-TIME-24H))

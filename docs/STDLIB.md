@@ -18,6 +18,9 @@ Complete documentation of the ASG standard library modules.
 | `http` | HTTP client functions | `(import "http")` |
 | `datetime` | Date and time operations | `(import "datetime")` |
 | `testing` | Unit testing framework | `(import "testing")` |
+| `regex` | Regular expressions | `(import "regex")` |
+| `validation` | Data validation | `(import "validation")` |
+| `file` | Advanced file operations | `(import "file")` |
 
 ---
 
@@ -831,4 +834,451 @@ LN10                ; 2.302585092994046
     (assert-eq (length result) 3)))))
 
 (summary)
+```
+
+---
+
+## regex.asg
+
+**Regular expressions for text processing.**
+
+```lisp
+(import "regex")
+```
+
+### Basic Matching
+
+```lisp
+(match pattern text)      ; full pattern match, returns bool
+(contains pattern text)   ; check if pattern exists in text
+```
+
+### Search Operations
+
+```lisp
+(find pattern text)       ; first match or nil
+(find-all pattern text)   ; all matches as array
+(find-pos pattern text)   ; {start, end, match} or nil
+```
+
+**Examples:**
+```lisp
+(find "\\d+" "abc123def")
+; => "123"
+
+(find-all "\\d+" "a1b2c3")
+; => ["1", "2", "3"]
+```
+
+### Replacement
+
+```lisp
+(replace-first pattern repl text)  ; replace first match
+(replace-all pattern repl text)    ; replace all matches
+(replace-with pattern fn text)     ; replace with function result
+```
+
+**Examples:**
+```lisp
+(replace-all "\\d+" "X" "a1b2c3")
+; => "aXbXcX"
+
+(replace-with "\\d+" (lambda (x) (str (* 2 (parse-int x)))) "a1b2")
+; => "a2b4"
+```
+
+### Splitting
+
+```lisp
+(split pattern text)      ; split by pattern
+(split-n pattern text n)  ; split with limit
+```
+
+**Examples:**
+```lisp
+(split "\\s+" "hello   world")
+; => ["hello", "world"]
+```
+
+### Capture Groups
+
+```lisp
+(groups pattern text)         ; array of captured groups
+(named-groups pattern text)   ; dict of named groups
+```
+
+**Examples:**
+```lisp
+(groups "(\\d+)-(\\d+)" "123-456")
+; => ["123-456", "123", "456"]
+
+(named-groups "(?P<year>\\d{4})-(?P<month>\\d{2})" "2024-01")
+; => {"year": "2024", "month": "01"}
+```
+
+### Utilities
+
+```lisp
+(escape text)             ; escape special characters
+(valid? pattern)          ; check if pattern is valid regex
+```
+
+### High-Level Functions
+
+```lisp
+(extract-numbers text)    ; extract all numbers
+(extract-emails text)     ; extract email addresses
+(extract-urls text)       ; extract URLs
+(extract-hashtags text)   ; extract #hashtags
+(extract-mentions text)   ; extract @mentions
+```
+
+### Validation
+
+```lisp
+(valid-email? email)      ; validate email format
+(valid-url? url)          ; validate URL format
+(valid-phone? phone)      ; validate phone (international)
+(valid-ipv4? ip)          ; validate IPv4 address
+```
+
+### Text Transformations
+
+```lisp
+(strip-html text)         ; remove HTML tags
+(normalize-whitespace text) ; collapse whitespace
+(camel-to-snake text)     ; camelCase -> snake_case
+(snake-to-camel text)     ; snake_case -> camelCase
+```
+
+### Predefined Patterns
+
+```lisp
+PATTERN-EMAIL             ; email regex
+PATTERN-URL               ; URL regex
+PATTERN-PHONE             ; phone regex
+PATTERN-IPV4              ; IPv4 regex
+PATTERN-HEX-COLOR         ; #RGB or #RRGGBB
+PATTERN-UUID              ; UUID regex
+PATTERN-DATE-ISO          ; YYYY-MM-DD
+PATTERN-TIME-24H          ; HH:MM:SS
+```
+
+### Example: Log Parser
+
+```lisp
+(import "regex")
+
+(let log-line "[2024-01-15 14:30:00] ERROR: Connection failed")
+
+; Extract timestamp
+(let timestamp (find "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}" log-line))
+; => "2024-01-15 14:30:00"
+
+; Extract log level
+(let level (find "\\] (\\w+):" log-line))
+; => "ERROR"
+
+; Parse structured logs
+(fn parse-log-line (line)
+  (let groups (groups "\\[(.+?)\\] (\\w+): (.+)" line))
+  (if groups
+    (dict
+      "timestamp" (index groups 1)
+      "level" (index groups 2)
+      "message" (index groups 3))
+    nil))
+```
+
+---
+
+## validation.asg
+
+**Data validation utilities.**
+
+```lisp
+(import "validation")
+```
+
+### Type Checks
+
+```lisp
+(string? x)       ; is x a string?
+(number? x)       ; is x int or float?
+(int? x)          ; is x an integer?
+(float? x)        ; is x a float?
+(array? x)        ; is x an array?
+(dict? x)         ; is x a dictionary?
+(bool? x)         ; is x a boolean?
+(function? x)     ; is x a function?
+```
+
+### Emptiness Checks
+
+```lisp
+(nil? x)          ; is x nil?
+(present? x)      ; is x not nil?
+(empty? x)        ; is x empty (string/array/dict)?
+(not-empty? x)    ; is x not empty?
+```
+
+### Number Validation
+
+```lisp
+(in-range? x min max)  ; min <= x <= max
+(positive? x)          ; x > 0
+(negative? x)          ; x < 0
+(zero? x)              ; x == 0
+(non-zero? x)          ; x != 0
+(integer? x)           ; is integer (int or whole float)
+(natural? x)           ; integer and > 0
+(non-negative? x)      ; x >= 0
+```
+
+### String Validation
+
+```lisp
+(min-length? s min)    ; length >= min
+(max-length? s max)    ; length <= max
+(length-between? s min max)  ; min <= length <= max
+(alpha? s)             ; only letters a-zA-Z
+(alphanumeric? s)      ; letters and digits
+(digits? s)            ; only digits
+(identifier? s)        ; valid identifier name
+(no-whitespace? s)     ; no spaces/tabs
+(blank? s)             ; empty or whitespace only
+```
+
+### Format Validation
+
+```lisp
+(email? s)        ; valid email format
+(url? s)          ; valid URL (http/https)
+(phone? s)        ; international phone
+(uuid? s)         ; valid UUID
+(ipv4? s)         ; valid IPv4 address
+(hex-color? s)    ; valid hex color (#RGB or #RRGGBB)
+(date-iso? s)     ; YYYY-MM-DD format
+(time-24h? s)     ; HH:MM or HH:MM:SS format
+```
+
+### Password Strength
+
+```lisp
+(password-basic? s)    ; 8+ characters
+(password-medium? s)   ; 8+ chars, upper, lower, digit
+(password-strong? s)   ; 12+ chars, upper, lower, digit, special
+```
+
+### Array Validation
+
+```lisp
+(array-not-empty? arr)       ; non-empty array
+(array-min-length? arr min)  ; length >= min
+(array-max-length? arr max)  ; length <= max
+(all? arr pred)              ; all elements match
+(any? arr pred)              ; any element matches
+(unique? arr)                ; no duplicates
+```
+
+### Dictionary Validation
+
+```lisp
+(has-key? d key)         ; dict has key
+(has-keys? d keys)       ; dict has all keys
+(missing-keys d keys)    ; get missing keys
+```
+
+### Validator Builder
+
+```lisp
+; Create validator from rules
+(let validator (make-validator (array
+  (dict "field" "email" "check" email? "message" "Invalid email")
+  (dict "field" "age" "check" (lambda (x) (in-range? x 18 120)) "message" "Invalid age"))))
+
+; Use validator
+(let result (validate validator user-data))
+(valid? result)          ; true or false
+(get-errors result)      ; array of error dicts
+(first-error result)     ; first error or nil
+```
+
+### Example
+
+```lisp
+(import "validation")
+
+(let user (dict
+  "email" "test@example.com"
+  "password" "SecurePass123!"
+  "age" 25))
+
+; Individual checks
+(email? (dict-get user "email"))         ; => true
+(password-strong? (dict-get user "password"))  ; => true
+(in-range? (dict-get user "age") 18 120)      ; => true
+
+; Build validator
+(let validate-user (make-validator (array
+  (dict "field" "email" "check" email? "message" "Invalid email")
+  (dict "field" "password" "check" password-medium? "message" "Weak password")
+  (dict "field" "age" "check" positive? "message" "Age must be positive"))))
+
+(let result (validate validate-user user))
+(if (valid? result)
+  (print "User is valid!")
+  (print (concat "Errors: " (str (get-errors result)))))
+```
+
+---
+
+## file.asg
+
+**Advanced file operations.**
+
+```lisp
+(import "file")
+```
+
+### Reading Files
+
+```lisp
+(read path)              ; read file as string
+(read-lines path)        ; read as array of lines
+(read-json path)         ; read and parse JSON
+(read-safe path default) ; read with fallback
+(read-head path n)       ; first n lines
+(read-tail path n)       ; last n lines
+```
+
+### Writing Files
+
+```lisp
+(write path content)          ; write string to file
+(write-lines path lines)      ; write array of lines
+(write-json path data)        ; write JSON
+(write-json-pretty path data) ; write formatted JSON
+(append-line path line)       ; append single line
+(append-lines path lines)     ; append multiple lines
+```
+
+### File Checks
+
+```lisp
+(exists? path)       ; file/dir exists?
+(file? path)         ; is regular file?
+(directory? path)    ; is directory?
+(empty? path)        ; file size is 0?
+(readable? path)     ; can read file?
+```
+
+### Metadata
+
+```lisp
+(size path)          ; file size in bytes
+(size-human path)    ; "1.5 MB", "234 KB", etc.
+(extension path)     ; "txt", "json", etc.
+(basename path)      ; filename without path
+(dirname path)       ; directory part
+(name-without-ext path)  ; filename without extension
+```
+
+### Path Operations
+
+```lisp
+(join-path (array "dir" "subdir" "file.txt"))
+; => "dir/subdir/file.txt"
+
+(normalize "a/b/../c/./d")  ; => "a/c/d"
+(absolute? "/home/user")    ; => true
+(relative? "./file.txt")    ; => true
+```
+
+### Directory Operations
+
+```lisp
+(list-dir path)          ; list all items
+(list-files path)        ; list only files
+(list-dirs path)         ; list only directories
+(list-by-ext path "txt") ; list files with extension
+(list-recursive path)    ; recursive file list
+```
+
+### Copy and Move
+
+```lisp
+(copy src dest)      ; copy file
+(move src dest)      ; move file
+(rename old new)     ; rename file
+```
+
+### Specialized Formats
+
+```lisp
+; CSV
+(read-csv path ",")      ; read CSV with separator
+(write-csv path data ",")
+
+; Properties (key=value)
+(read-properties path)   ; => dict
+(write-properties path props)
+```
+
+### Temporary Files
+
+```lisp
+(with-temp-file "content" (lambda (path)
+  (print (concat "Temp file: " path))
+  ; use temp file here
+  "result"))  ; returns "result", file is deleted
+```
+
+### Example: Config Manager
+
+```lisp
+(import "file")
+
+; Load config with defaults
+(fn load-config (path defaults)
+  (if (exists? path)
+    (let config (read-json path))
+    (dict-merge defaults config)
+    defaults))
+
+; Save config
+(fn save-config (path config)
+  (write-json-pretty path config))
+
+; Usage
+(let defaults (dict
+  "theme" "dark"
+  "language" "en"
+  "notifications" true))
+
+(let config (load-config "config.json" defaults))
+(print (dict-get config "theme"))
+
+; Update and save
+(let new-config (dict-set config "theme" "light"))
+(save-config "config.json" new-config)
+```
+
+### Example: Log Analyzer
+
+```lisp
+(import "file")
+
+; Count lines in log files
+(fn analyze-logs (dir)
+  (let log-files (list-by-ext dir "log"))
+  (map log-files (lambda (f)
+    (let path (join-path (array dir f)))
+    (let lines (read-lines path))
+    (dict
+      "file" f
+      "lines" (length lines)
+      "size" (size-human path)))))
+
+(analyze-logs "/var/log")
 ```
