@@ -1,6 +1,6 @@
 [package]
 name = "asg-pkg"
-version = "1.0.2"
+version = "1.1.0"
 edition = "2021"
 authors = ["Xzdes <xzdes@yandex.com>"]
 description = "Package manager for ASG programming language"
